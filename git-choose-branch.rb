@@ -1,0 +1,69 @@
+#!/usr/bin/env ruby
+
+def install_missing_gem(name, version:)
+  loop do
+    puts "The #{name} #{version} gem is missing. Install? [Yn]"
+    answer = gets
+    if answer =~ /y/i
+      system "gem install #{name} -v #{version}"
+    elsif answer =~ /n/i
+      exit 1
+    end
+  end
+end
+
+def require_or_install(name, version:, require_as: name)
+  tries = 0
+  begin
+    require require_as
+  rescue LoadError
+    if tries == 0
+      tries += 1
+      install_missing_gem name, version: version
+      retry
+    else
+      puts "#{name} #{version} could not be installed. You will need to install it manually."
+    end
+  end
+end
+
+require_or_install 'highline', version: '2.0.2'
+require_or_install 'term-ansicolor', version: '1.7.1', require_as: 'term/ansicolor'
+
+trap('INT') do
+  exit
+end
+
+cli = HighLine.new
+
+command = "git recent"
+puts "Running #{command}"
+puts
+
+results = `#{command}`
+if $?.success?
+  current_branch = `git branch | grep '*'`.chomp.gsub(/^\s*\*\s*/, '')
+  answer = cli.choose do |menu|
+    menu.header = "Select a branch"
+    menu.prompt = "\nWhich branch?"
+    branches = results.lines.map(&:chomp)
+    branches.each_with_index do |branch|
+      if branch == current_branch
+        branch = [branch, Term::ANSIColor.bold('(current)')].join(' ')
+        default = branch
+      end
+      menu.choice(branch)
+    end
+  end
+
+  answer_without_ansi = answer.gsub(/\e\[\d+m/, '')
+  answer_without_current_marker = answer_without_ansi.gsub(/\s*\(current\)\s*/, '')
+  if answer_without_current_marker.nil? || answer_without_current_marker.empty?
+    puts "No switching branches"
+  else
+    puts "Checking out #{answer_without_current_marker}"
+    system "git checkout #{answer_without_current_marker}"
+  end
+else
+  raise "Failed with error: \n#{results}"
+end

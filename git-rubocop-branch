@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+git diff --name-status master..HEAD | grep -vE '^(D|R)' | cut -f2 | xargs bundle exec rubocop

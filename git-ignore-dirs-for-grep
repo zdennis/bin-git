@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+cat .gitignore | sed -e 's/\/\*//g' | sort | uniq | sed -E 's/(.*)$/ --exclude-dir \1/g' | tr '\n' ' '

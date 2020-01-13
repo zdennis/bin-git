@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+f() { find . -name \"*$1*\" | grep -v .git | sed -e 's/\.\///' | xargs -I{} open `git url`/blob/`git cbranch`/{}; }; f

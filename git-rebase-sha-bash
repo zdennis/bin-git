@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+f() { tempfile=`mktemp` && chmod a+x $tempfile && GIT_SEQUENCE_EDITOR=$tempfile git rebase -i $1 && rm $tempfile; }; f

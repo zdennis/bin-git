@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+BRANCH="$1"
+
+if [ -z "$BRANCH" ] ; then
+  BRANCH="`git cbranch`"
+fi
+
+echo "`git url`/tree/$BRANCH"

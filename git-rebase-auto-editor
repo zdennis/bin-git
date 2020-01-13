@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+rebase_todo_file=$1
+echo "Auto-rebasing $rebase_todo_file"
+exit 0

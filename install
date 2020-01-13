@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+
+DEST_DIR=~/bin
+
+EXPANDED_PWD=`ruby -e "print File.expand_path(Dir.pwd)"`
+
+if [ ! -d $DEST_DIR ] ; then
+  echo "$DEST_DIR doesn't exist. Creating it."
+  mkdir -p $DEST_DIR
+fi
+
+echo "Setting up symlinks..."
+for file in git-* ; do
+  SOURCE_FILE="$EXPANDED_PWD/$file"
+  TARGET_FILE="$DEST_DIR/$file"
+  CMD="ln -fs $SOURCE_FILE $TARGET_FILE"
+  echo $CMD
+  $CMD
+done

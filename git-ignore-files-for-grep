@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+cat .gitignore | sed -E 's/(.*)$/ --exclude \1/g' | tr '\n' ' '

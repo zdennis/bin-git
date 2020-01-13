@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+g(){ echo `git url`/compare/`git log -n1 --format='%H' $1`...`git cbranch`; }; g

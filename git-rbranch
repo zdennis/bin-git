@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+git branch -r | grep -E "/`git cbranch`$" | grep -v -e "->"

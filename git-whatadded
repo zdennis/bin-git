@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+f() { git log --oneline -- $1 | tail -n 1; }; f

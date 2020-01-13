@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+PR_NUMBER="$1"
+
+if [ "$PR_NUMBER" ]; then
+  open `git pull-url $PR_NUMBER`
+else
+  open `git pull-url`
+fi

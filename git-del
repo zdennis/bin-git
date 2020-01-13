@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+# +del+ will have run "git rm" on any files you deleted so git knows to delete them to
+git status | grep deleted | cut -d' ' -f 5 | xargs git rm 2> /dev/null

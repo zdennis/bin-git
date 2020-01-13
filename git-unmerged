@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+ruby ~/.tidbits/lib/git-unmerged.rb $@

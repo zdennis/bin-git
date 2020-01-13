@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+PR_NUMBER="$1"
+
+if [ "$PR_NUMBER" ]; then
+  echo `git url`/pull/$PR_NUMBER
+else
+  echo `git url`/pull/new/`git cbranch`
+fi

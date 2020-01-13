@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+f() { grep -nHR '$1' --exclude-dir .git `git ignore-dirs-for-grep` `git ignore-files-for-grep` . | cut -d: -f1,2 | sed -e 's/:/#L/' | xargs -I {} echo '[' {} '](' `git sha-url`/{} ')' | sed -e 's/commit/blob/' ; } ; f

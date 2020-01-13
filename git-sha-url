@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+if [ "$1" ]; then
+  sha=$1
+else
+  sha=`git sha`
+fi
+
+echo `git url`/commit/$sha

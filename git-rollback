@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+function mhsrc_gitconfig_rollback(){ num=$1 ;git reset --soft HEAD~$num ; echo Rolled back softly $num commits ;} ; mhsrc_gitconfig_rollback 

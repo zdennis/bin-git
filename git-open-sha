@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+open `git sha-url $1`
