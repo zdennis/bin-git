@@ -1,3 +1,1 @@
-#!/usr/bin/env bash
-
-git reflog | grep 'checkout: moving from' | head -n1 | ruby -e 'puts STDIN.read.scan(/\sfrom\s(.*)\sto\s/)'
+git-previous-branch
