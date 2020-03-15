@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+
+git changed-files | grep _spec.rb
