@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+
+GITREF=${1:-HEAD}
+git 1 master..$GITREF
