@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+SHA=$1
+git rev-list $SHA..master --ancestry-path | grep -f <(git rev-list $SHA..master --first-parent) |tail -1
