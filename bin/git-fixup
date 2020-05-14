@@ -1,3 +1,10 @@
 #!/usr/bin/env bash
 
-f() { git commit --fixup=$1; }; f
+SHA=$1
+
+if [ -z "$SHA"] ; then
+  printf "\e[31mYou must pass a SHA to fixup.\e[0m\n"
+  exit 1
+fi
+
+git commit --fixup=$SHA
