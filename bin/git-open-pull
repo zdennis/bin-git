@@ -1,9 +1,59 @@
-#!/usr/bin/env bash
+#!/usr/bin/env ruby
 
-PR_NUMBER="$1"
+require 'json'
 
-if [ "$PR_NUMBER" ]; then
-  open `git pull-url $PR_NUMBER`
+if `which octo`.empty?
+  puts <<~MESSAGE
+    The octo command is not found. Possible installation methods:
+
+        # via homebrew
+        brew install octo-cli/octo/octo
+
+        # via curl
+        curl https://raw.githubusercontent.com/octo-cli/octo-cli/master/download.sh | sh
+
+    More more installation options see https://github.com/octo-cli/octo-cli
+  MESSAGE
+  exit 1
+end
+
+SHA_OR_REF=ARGV.shift || `git sha`.chomp
+
+ENV['GITHUB_TOKEN'] ||= `git config github.token`.chomp
+
+if ENV['GITHUB_TOKEN'].empty?
+  fail <<~ERROR
+    Missing github token! The octo command requires it. It can be set in
+    your environment or set as `git config github.token YOUR_TOKEN`.
+  ERROR
+end
+
+if SHA_OR_REF =~ /^\d+$/
+  # when SHA_OR_REF is a PR number itself
+  open `git pull-url $SHA_OR_REF`
 else
-  open `git pull-url`
-fi
+  repos = `git config remote.origin.url`.scan(/github.com[:\/](.*)/).flatten.first.to_s.sub('.git', '')
+  if repos.empty?
+    puts "The origin url could not be extracted running `git config remote.origin.url`"
+    exit 1
+  end
+
+  octo_command = "octo repos list-pull-requests-associated-with-commit --groot-preview --repo=#{repos} --commit_sha=#{SHA_OR_REF}"
+  json_response = `#{octo_command}`
+  existing_pull_requests = JSON.parse(json_response)
+  case existing_pull_requests.length
+  when 0
+    system "open `git pull-url`"
+  when 1
+    pull_request_href = existing_pull_requests.first['html_url']
+    puts "Found #{pull_request_href} for #{SHA_OR_REF}", "Opening now in your system's default browser."
+    system "open #{pull_request_href}"
+    puts "Done."
+    exit 0
+  else
+    puts "Found #{existing_pull_requests.length} pull requests for #{SHA_OR_REF}:"
+    existing_pull_requests.each do |pull_request_data|
+      puts "  - #{pull_request_data['html_url'] }"
+    end
+  end
+end
