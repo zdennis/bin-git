@@ -40,7 +40,14 @@ else
 
   octo_command = "octo repos list-pull-requests-associated-with-commit --groot-preview --repo=#{repos} --commit_sha=#{SHA_OR_REF}"
   json_response = `#{octo_command}`
-  existing_pull_requests = JSON.parse(json_response)
+  response_data = JSON.parse(json_response)
+
+  if response_data.is_a?(Hash) && response_data['message'] =~ /no commit found/i
+    puts response_data['message']
+    exit 1
+  end
+
+  existing_pull_requests = response_data
   case existing_pull_requests.length
   when 0
     system "open `git pull-url`"
