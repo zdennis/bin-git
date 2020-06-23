@@ -1,0 +1,41 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+
+SCRIPT_NAME = File.basename(__FILE__)
+
+def bold(str)
+  "\e[1m#{str}\e[0m"
+end
+
+def red(str)
+  "\e[31m#{str}\e[0m"
+end
+
+OptionParser.new do |opts|
+  opts.banner = "Usage: #{SCRIPT_NAME} [options] [github project]"
+  opts.on("-h", "--help", "Prints help message") do
+    puts <<~HELP
+      #{SCRIPT_NAME} is used to open a project on Github in your default browser.
+
+      Example:
+
+         #{SCRIPT_NAME} rails/rails
+         #{SCRIPT_NAME} ruby/ruby
+    HELP
+    puts
+    puts opts
+    exit
+  end
+end.parse!
+
+github_project = ARGV.shift
+
+if github_project.nil?
+  STDERR.puts red <<~ERROR
+    Must provide a github project. See #{SCRIPT_NAME} --help for more information.
+  ERROR
+  exit 1
+end
+
+system "git clone git@github.com:#{github_project}"
