@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+# Get the organization name for the current repository.
+
+git repos-name | sed -e 's/\/.*//'
