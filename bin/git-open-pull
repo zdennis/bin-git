@@ -17,7 +17,8 @@ if `which octo`.empty?
   exit 1
 end
 
-SHA_OR_REF=ARGV.shift || `git sha`.chomp
+ARGV_PROVIDED_SHA_OR_REF = ARGV.shift
+SHA_OR_REF = ARGV_PROVIDED_SHA_OR_REF || `git sha`.chomp
 
 ENV['GITHUB_TOKEN'] ||= `git config github.token`.chomp
 
@@ -38,13 +39,25 @@ else
     exit 1
   end
 
-  octo_command = "octo repos list-pull-requests-associated-with-commit --groot-preview --repo=#{repos} --commit_sha=#{SHA_OR_REF}"
-  json_response = `#{octo_command}`
-  response_data = JSON.parse(json_response)
+  if ARGV_PROVIDED_SHA_OR_REF
+    octo_command = "octo repos list-pull-requests-associated-with-commit --groot-preview --repo=#{repos} --commit_sha=#{SHA_OR_REF}"
+    json_response = `#{octo_command}`
+    response_data = JSON.parse(json_response)
 
-  if response_data.is_a?(Hash) && response_data['message'] =~ /no commit found/i
-    puts response_data['message']
-    exit 1
+    if response_data.is_a?(Hash) && response_data['message'] =~ /no commit found/i
+      puts response_data['message']
+      exit 1
+    end
+  else
+    org_name = `git github-org-name`.chomp
+    branch_name = `git rev-parse --abbrev-ref HEAD`.chomp
+    octo_command = "octo pulls list --repo=#{repos} --head='#{org_name}:#{branch_name}'"
+    json_response = `#{octo_command}`
+    response_data = JSON.parse(json_response)
+    if response_data.length == 0
+      puts "No pulls for #{org_name}:#{branch_name} found."
+      exit 1
+    end
   end
 
   existing_pull_requests = response_data
