@@ -55,8 +55,8 @@ else
     json_response = `#{octo_command}`
     response_data = JSON.parse(json_response)
     if response_data.length == 0
-      puts "No pulls for #{org_name}:#{branch_name} found."
-      exit 1
+      system "open `git pull-url`"
+      exit 0
     end
   end
 
