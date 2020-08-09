@@ -4,5 +4,6 @@ git remote -v |
   grep -E 'origin.*fetch' |
   sed -e 's/[[:space:]]/ /' |
   cut -d' ' -f2 |
-  sed -E 's/git:\/\/(.*)\.git/https:\/\/\1/g' |    # support: git://some.repos/foo.git
-  sed -E 's/git@(.*):(.*)\.git/https:\/\/\1\/\2/g' # support: git@some.repos:some.repos/foo.git
+  sed -E 's/git:\/\/(.*)\.git/https:\/\/\1/g' |      # support: git://some.repos/foo.git
+  sed -E 's/git@(.*):(.*)\.git/https:\/\/\1\/\2/g' | # support: git@some.repos:some.repos/foo.git
+  sed -E 's/git@(.*):(.*)/https:\/\/\1\/\2/g'        # support: git@some.repos:some.repos/foo
