@@ -1,0 +1,108 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+
+def require_or_install(name, version:, require_as: name)
+  require require_as
+rescue LoadError
+  begin
+    install_missing_gem name, version: version
+    Gem.refresh
+    require require_as
+  rescue
+    puts "#{name} #{version} could not be installed. You will need to install it manually."
+  end
+end
+
+require_or_install 'term-ansicolor', version: '1.7.1', require_as: 'term/ansicolor'
+
+SCRIPT_NAME = File.basename(__FILE__)
+
+options = {
+  list: false
+}
+OptionParser.new do |opts|
+  opts.banner = "Usage: #{SCRIPT_NAME} [options] [branch-name]"
+
+  opts.on("-l", "--list", "Lists backup branches for current or specified branch") do
+    options[:list] = true
+  end
+
+  opts.on("-h", "--help", "Prints help message") do
+    puts <<~HELP
+      #{SCRIPT_NAME} is used to create or list backup branches. It will use the current branch if no branch name
+      is provided otherwise it will use the branch name provided.
+
+      Example:
+
+        # Backup current branch
+        #{SCRIPT_NAME}
+
+        # Backup specific branch
+        #{SCRIPT_NAME} features/sign-up
+
+        # List all known backup branches for the current branch
+        #{SCRIPT_NAME} -l
+
+        # List all known backup branches for a specific branch
+        #{SCRIPT_NAME} -l features/sign-up
+    HELP
+    puts
+    puts opts
+    exit
+  end
+end.parse!
+
+branch = ARGV.shift || `git current-branch`.chomp
+
+if branch.to_s.empty?
+  STDERR.puts Term::ANSIColor.red <<~ERROR.chomp
+    The branch name to backup could not be determined. Please provide the specific branch
+    name. See #{SCRIPT_NAME} --help for more information.
+  ERROR
+  exit 1
+end
+
+def branch_exists?(name)
+  system("git show-ref --verify --quiet refs/heads/#{name}")
+end
+
+if options.fetch(:list)
+  backup_branches = `git branch`.lines.grep(/#{Regexp.escape(branch)}.bak/)
+  puts backup_branches.map(&:strip)
+  exit 0
+end
+
+backup_branch = "#{branch}.bak"
+count = 0
+max_tries = 25
+loop do
+  if branch_exists?(backup_branch)
+    puts Term::ANSIColor.bright_black <<~MESSAGE.chomp
+      #{backup_branch} exists
+    MESSAGE
+
+    backup_branch = "#{branch}.bak#{count+=1}"
+    if count >= max_tries
+      puts Term::ANSIColor.red <<~ERROR.chomp
+        Exhausted attempts to create a backup branch!
+        You may need to do some cleanup.
+      ERROR
+      exit 1
+    end
+  else
+    break
+  end
+end
+
+command = "git branch #{backup_branch}"
+if system(command)
+  puts Term::ANSIColor.green <<~SUCCESS.chomp
+    Successfully backed up to #{backup_branch}
+  SUCCESS
+else
+  puts Term::ANSIColor.red <<~ERROR.chomp
+    Failed to backup #{branch} with command: #{command}
+  ERROR
+  exit 1
+end
