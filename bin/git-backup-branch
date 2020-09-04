@@ -19,13 +19,18 @@ require_or_install 'term-ansicolor', version: '1.7.1', require_as: 'term/ansicol
 SCRIPT_NAME = File.basename(__FILE__)
 
 options = {
-  list: false
+  list: false,
+  remote: nil,
 }
 OptionParser.new do |opts|
   opts.banner = "Usage: #{SCRIPT_NAME} [options] [branch-name]"
 
   opts.on("-l", "--list", "Lists backup branches for current or specified branch") do
     options[:list] = true
+  end
+
+  opts.on("-r", "--remote", "Use the remote branch instead of the local branch.") do
+    options[:remote] = "origin"
   end
 
   opts.on("-h", "--help", "Prints help message") do
@@ -40,6 +45,12 @@ OptionParser.new do |opts|
 
         # Backup specific branch
         #{SCRIPT_NAME} features/sign-up
+
+        # Backup the remote branch for the current branch
+        #{SCRIPT_NAME} -r
+
+        # Backup the remote branch for a specific branch
+        #{SCRIPT_NAME} -r features/sign-up
 
         # List all known backup branches for the current branch
         #{SCRIPT_NAME} -l
@@ -63,8 +74,12 @@ if branch.to_s.empty?
   exit 1
 end
 
-def branch_exists?(name)
-  system("git show-ref --verify --quiet refs/heads/#{name}")
+def branch_exists?(name, remote:)
+  if remote
+    system("git show-ref --verify --quiet refs/remotes/#{name}")
+  else
+    system("git show-ref --verify --quiet refs/heads/#{name}")
+  end
 end
 
 if options.fetch(:list)
@@ -73,11 +88,18 @@ if options.fetch(:list)
   exit 0
 end
 
-backup_branch = "#{branch}.bak"
+
+if options[:remote]
+  backup_branch = "#{branch}.bak.remote"
+  branch = "#{options[:remote]}/#{branch}"
+else
+  backup_branch = "#{branch}.bak"
+end
+
 count = 0
 max_tries = 25
 loop do
-  if branch_exists?(backup_branch)
+  if branch_exists?(backup_branch, remote: options[:remote])
     puts Term::ANSIColor.bright_black <<~MESSAGE.chomp
       #{backup_branch} exists
     MESSAGE
@@ -95,7 +117,7 @@ loop do
   end
 end
 
-command = "git branch #{backup_branch}"
+command = "git branch #{backup_branch} #{branch}"
 if system(command)
   puts Term::ANSIColor.green <<~SUCCESS.chomp
     Successfully backed up to #{backup_branch}
