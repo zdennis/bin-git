@@ -1,3 +1,73 @@
-#!/usr/bin/env bash
+#!/usr/bin/env ruby
 
-git log -n1 --pretty='%H' | tr -d '\n' | pbcopy
+require 'optparse'
+
+def require_or_install(name, version:, require_as: name)
+  require require_as
+rescue LoadError
+  begin
+    install_missing_gem name, version: version
+    Gem.refresh
+    require require_as
+  rescue
+    puts "#{name} #{version} could not be installed. You will need to install it manually."
+  end
+end
+
+require_or_install 'term-ansicolor', version: '1.7.1', require_as: 'term/ansicolor'
+
+require 'term/ansicolor'
+include Term::ANSIColor
+
+SCRIPT_NAME = File.basename(__FILE__)
+
+options = {
+  numchars: nil,
+  short: false
+}
+opts = OptionParser.new do |opts|
+  opts.banner = "Usage: #{SCRIPT_NAME} [options]"
+
+  opts.on("-n=NUMCHARS", "--num-chars=NUMCHARS", "Number of characters to copy") do |num|
+    options[:numchars] = num.to_i
+  end
+
+  opts.on("--gcb-short", "Copies the short version of the SHA just like Google Cloud Build does. First seven characters.") do
+    options[:numchars] = 7
+  end
+
+  opts.on("-s", "--short-abbrev", "Copy the short-abbreviated for mof the current SHA") do
+    options[:short] = true
+  end
+
+  opts.on("-h", "--help", "Prints help message") do
+    puts <<~HELP
+      #{SCRIPT_NAME} copies the current sha to the clipboard.
+
+      Examples:
+
+        #{bold("# Copies the current commit's SHA")}
+        #{SCRIPT_NAME}
+
+        #{bold("# Copies the first short abbreviated format of the current commit's SHA")}
+        #{bright_black(bold("# https://cloud.google.com/cloud-build/docs/configuring-builds/substitute-variable-values"))}
+        #{SCRIPT_NAME} -s
+
+        #{bold("# Copies the SHORT_SHA specified by Google Cloud Build")}
+        #{SCRIPT_NAME} --gcb-short
+
+        #{bold("# Copies the first 20 character of the commit SHA")}
+        #{SCRIPT_NAME} -n 20
+    HELP
+    puts
+    puts opts
+    exit
+  end
+end.parse!
+
+format = "%H"
+format = "%h" if options[:short]
+
+sha = `git log -n1 --pretty='#{format}'`.chomp
+sha = sha[0...options[:numchars]] if options.fetch(:numchars)
+system("echo #{sha} | tr -d '\n' | pbcopy")
