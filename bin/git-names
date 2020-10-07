@@ -1,0 +1,64 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+
+def require_or_install(name, version:, require_as: name)
+  require require_as
+rescue LoadError
+  begin
+    install_missing_gem name, version: version
+    Gem.refresh
+    require require_as
+  rescue
+    puts "#{name} #{version} could not be installed. You will need to install it manually."
+  end
+end
+
+require_or_install 'term-ansicolor', version: '1.7.1', require_as: 'term/ansicolor'
+
+require 'term/ansicolor'
+include Term::ANSIColor
+
+SCRIPT_NAME = File.basename(__FILE__)
+
+OptionParser.new do |opts|
+  opts.banner = "Usage: #{SCRIPT_NAME} [options] [branch-name]"
+
+  opts.on("-h", "--help", "Prints help message") do
+    puts <<~HELP
+      #{SCRIPT_NAME} is used to display the filenames for a particular range of commits.
+
+      - By default, it will compare the current branch against the master branch
+      - You can pass in SHA reference and it will compare the current HEAD against that
+      - You can all pass in your own range
+
+      Examples:
+
+        #{bold("# Default: List file names between this branch and master")}
+        # Ends up running: git diff --name-only master..HEAD
+        #{SCRIPT_NAME}
+
+        #{bold("# List file names in the last two commits on the current branch")}
+        # Ends up running: git diff --name-only HEAD..HEAD~2
+        #{SCRIPT_NAME} HEAD~2
+
+        #{bold("# List file names in a custom commit range")}
+        # Ends up running: git diff --name-only abc..xyz
+        #{SCRIPT_NAME} abc..xyz
+        HELP
+    puts
+    puts opts
+    exit
+  end
+end.parse!
+
+
+range = if ARGV.empty?
+  "master..HEAD"
+else
+  argv = ARGV.join(" ")
+  argv.match("..") ? argv : "HEAD..#{ARGV.first}"
+end
+
+command ="git diff --name-status #{range}"
+system(command)
