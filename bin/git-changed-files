@@ -1,7 +1,8 @@
 #!/usr/bin/env ruby
 
+# The lowercase -d in the --diff-filter used below is for excluding deleted files.
 output = []
-output.concat(`git diff --name-only #{ARGV.join(' ')}`.lines)
-output.concat(`git diff --name-only --cached #{ARGV.join(' ')}`.lines)
+output.concat(`git diff --name-only --diff-filter="d" #{ARGV.join(' ')}`.lines)
+output.concat(`git diff --name-only --cached --diff-filter="d" #{ARGV.join(' ')}`.lines)
 puts output.uniq
 
