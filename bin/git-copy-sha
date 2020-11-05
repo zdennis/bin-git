@@ -68,6 +68,6 @@ end.parse!
 format = "%H"
 format = "%h" if options[:short]
 
-sha = `git log -n1 --pretty='#{format}'`.chomp
+sha = ARGV.shift || `git log -n1 --pretty='#{format}'`.chomp
 sha = sha[0...options[:numchars]] if options.fetch(:numchars)
 system("echo #{sha} | tr -d '\n' | pbcopy")
