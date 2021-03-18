@@ -1,8 +1,22 @@
 #!/usr/bin/env ruby
 
+require "optparse"
+
+options = {
+  dry_run: false,
+  git_args: nil
+}
+OptionParser.new do |opts|
+  opts.on("-n", "--dry-run", "Performs a dry run printing out what it would do") do
+    options[:dry_run] = true
+  end
+end.parse!
+
+options[:git_args] = ARGV.any? ? ARGV.join(' ') : "master...HEAD"
+
 # The lowercase -d in the --diff-filter used below is for excluding deleted files.
 output = []
-output.concat(`git diff --name-only --diff-filter="d" #{ARGV.join(' ')}`.lines)
-output.concat(`git diff --name-only --cached --diff-filter="d" #{ARGV.join(' ')}`.lines)
+output.concat(`git diff --name-only --diff-filter="d" #{options[:git_args]}`.lines)
+output.concat(`git diff --name-only --cached --diff-filter="d"`.lines)
 puts output.uniq
 
