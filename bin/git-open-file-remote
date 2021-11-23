@@ -1,0 +1,64 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+
+SCRIPT_NAME = File.basename(__FILE__)
+
+def bold(str)
+  "\e[1m#{str}\e[0m"
+end
+
+def red(str)
+  "\e[31m#{str}\e[0m"
+end
+
+options = {
+  open_on_main_branch: false
+}
+
+OptionParser.new do |opts|
+  opts.banner = "Usage: #{SCRIPT_NAME} [options] [path/to/flie]"
+
+  opts.on("-m", "--main", "Open the file on the main branch instead of current branch. E.g. main or master. Default: #{options.fetch(:open_on_main_branch)}") do
+    options[:open_on_main_branch] = true
+  end
+
+  opts.on("-h", "--help", "Prints help message") do
+    puts <<~HELP
+      #{SCRIPT_NAME} is used to open a path on Github in your default browser.
+
+      Example for opening a file on the current branch:
+
+        #{SCRIPT_NAME} spec/models/wibble_spec.rb
+
+      Example for opening a file on the main branch (e.g. main or master):
+
+        #{SCRIPT_NAME} -m spec/models/wibble_spec.rb
+    HELP
+    puts
+    puts opts
+    exit
+  end
+end.parse!
+
+path = ARGV.shift
+
+if path.nil?
+  STDERR.puts red <<~ERROR
+    Must provide a path to open. See #{SCRIPT_NAME} --help for more information.
+  ERROR
+  exit 1
+end
+
+url = `git url`.chomp
+
+ref = if options.fetch(:open_on_main_branch)
+  `git get-main-branch`.chomp
+else
+  `git current-branch`.chomp
+end
+
+file2open = "#{url}/blob/#{ref}/#{path}"
+puts "Opening #{file2open} in your default browser."
+system %|open "#{file2open}"|
+
