@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+
+# Compare main branch against the current branch. Show commit differences.
+
+GITREF=${1:-HEAD}
+main_branch=$(git get-main-branch)
+git 1 "$GITREF..$main_branch"
