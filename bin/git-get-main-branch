@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+
+# This script is for determining what the primary branch is for a repository. It used to commonly be master
+# but now it is regularly being main so look for either branch and return the first match.
+
+for branch in main master; do
+  git rev-parse --verify "$branch" 1> /dev/null 2> /dev/null
+  if [ $? -eq 0 ]; then
+    echo $branch
+    exit 0
+  fi
+done
+
+exit 1

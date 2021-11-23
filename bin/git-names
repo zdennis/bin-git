@@ -21,21 +21,27 @@ include Term::ANSIColor
 
 SCRIPT_NAME = File.basename(__FILE__)
 
+def main_branch
+  @main_branch ||= `git get-main-branch`.chomp
+end
+
 OptionParser.new do |opts|
   opts.banner = "Usage: #{SCRIPT_NAME} [options] [branch-name]"
 
   opts.on("-h", "--help", "Prints help message") do
+    main_branch = `git get-main-branch`.chomp
+
     puts <<~HELP
       #{SCRIPT_NAME} is used to display the filenames for a particular range of commits.
 
-      - By default, it will compare the current branch against the master branch
+      - By default, it will compare the current branch against the #{main_branch} branch
       - You can pass in SHA reference and it will compare the current HEAD against that
       - You can all pass in your own range
 
       Examples:
 
-        #{bold("# Default: List file names between this branch and master")}
-        # Ends up running: git diff --name-only master..HEAD
+        #{bold("# Default: List file names between this branch and #{main_branch}")}
+        # Ends up running: git diff --name-only #{main_branch}..HEAD
         #{SCRIPT_NAME}
 
         #{bold("# List file names in the last two commits on the current branch")}
@@ -54,7 +60,7 @@ end.parse!
 
 
 range = if ARGV.empty?
-  "master..HEAD"
+  "#{main_branch}..HEAD"
 else
   argv = ARGV.join(" ")
   argv.match("..") ? argv : "HEAD..#{ARGV.first}"

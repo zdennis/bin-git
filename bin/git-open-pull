@@ -72,8 +72,12 @@ else
     exit 0
   else
     puts "Found #{existing_pull_requests.length} pull requests for #{SHA_OR_REF}:"
-    existing_pull_requests.each do |pull_request_data|
-      puts "  - #{pull_request_data['html_url'] }"
+    begin
+      existing_pull_requests.each do |pull_request_data|
+        puts "  - #{pull_request_data['html_url'] }"
+      end
+    rescue Exception => error
+      fail "Failed: #{existing_pull_requests.inspect}"
     end
   end
 end

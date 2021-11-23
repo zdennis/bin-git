@@ -173,12 +173,12 @@ class GitUnmerged
       |  #{yellow("yellow")} commits have not been merged
       |  #{green("green")} commits have equivalent changes in <upstream> but different SHAs
       |
-      |The default upstream is 'master' (or 'origin/master' if running with --remote)
+      |The default upstream is '#{main_branch}' (or 'origin/#{main_branch}' if running with --remote)
       |
       |OPTIONS:
       |  -a   display all unmerged commits (verbose)
       |  --remote (-r)  compare remote branches instead of local branches
-      |  --upstream <branch>   specify a specific upstream branch (defaults to master)
+      |  --upstream <branch>   specify a specific upstream branch (defaults to #{main_branch})
       |  --exclude <branch>[,<branch>,...]   specify a comma-separated list of branches to exclude
       |  --only <branch>[,<branch>,...]   specify a comma-separated list of branches to include
       |  --prune  prompts user to delete branches which have no differences with the upstream
@@ -189,10 +189,10 @@ class GitUnmerged
       |EXAMPLE: check for all unmerged commits and merged commits (but with a different SHA)
       |  #{$0} -a
       |
-      |EXAMPLE: use a different upstream than master
+      |EXAMPLE: use a different upstream than #{main_branch}
       |  #{$0} --upstream otherbranch
       |
-      |EXAMPLE: compare remote branches against origin/master
+      |EXAMPLE: compare remote branches against origin/#{main_branch}
       |  #{$0} --remote (-r)
       |
       |EXAMPLE: delete branches without unmerged commits
@@ -216,6 +216,10 @@ class GitUnmerged
 
   def print_version
     puts "#{VERSION}"
+  end
+
+  def main_branch
+    @main_branch ||= `git get-maain-branch`.chomp
   end
 
   def branch_description
@@ -272,13 +276,13 @@ class GitUnmerged
       puts "", "There are no branches to prune."
     else
       # Protects Heroku repo's
-      rejected_master_branches = @branches_to_prune.reject!{|branch| branch.branch_name =~ /master/}
+      rejected_main_branches = @branches_to_prune.reject!{|branch| branch.branch_name =~ /#{main_branch}/}
       puts "", "Are you sure you want to prune the following #{@branches_to_prune.size} branches?", ""
       puts red("(Keep in mind this will remove these branches from the remote repository)") if @remote
       @branches_to_prune.each do |branch|
         puts red(" #{branch.name}")
       end
-      puts "(omitting branches named master)" if rejected_master_branches
+      puts "(omitting branches named #{main_branch})" if rejected_main_branches
       puts
       print "y or n: "
       if STDIN.gets=~/y/i
@@ -306,9 +310,9 @@ class GitUnmerged
     if @options[:upstream]
       @options[:upstream]
     elsif local?
-      "master"
+      main_branch
     elsif remote?
-      "origin/master"
+      "origin/#{main_branch}"
     end
   end
 

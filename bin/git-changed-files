@@ -4,19 +4,47 @@ require "optparse"
 
 options = {
   dry_run: false,
-  git_args: nil
+  git_args: nil,
+  file_patterns: [],
+  file_types: []
 }
 OptionParser.new do |opts|
+  opts.on("-f", "--file-type=FILE_TYPE", "File type/extension. Can be comma-separate or specified multiple times") do |types|
+    options[:file_types].push *types.split(/,/).map(&:strip)
+  end
+
+  opts.on("--pattern=PATTERN", "File name pattern to match. Can be comma-separated.") do |patterns|
+    options[:file_patterns].push *patterns.split(/,/).map(&:strip)
+  end
+
   opts.on("-n", "--dry-run", "Performs a dry run printing out what it would do") do
     options[:dry_run] = true
   end
 end.parse!
 
-options[:git_args] = ARGV.any? ? ARGV.join(' ') : "master...HEAD"
+main_branch = `git get-main-branch`.chomp
+options[:git_args] = ARGV.any? ? ARGV.join(' ') : "#{main_branch}...HEAD"
 
 # The lowercase -d in the --diff-filter used below is for excluding deleted files.
 output = []
-output.concat(`git diff --name-only --diff-filter="d" #{options[:git_args]}`.lines)
-output.concat(`git diff --name-only --cached --diff-filter="d"`.lines)
-puts output.uniq
+output.concat(`git diff --name-only --diff-filter="AMd" #{options[:git_args]}`.lines)
+output.concat(`git diff --name-only --cached --diff-filter="AMd"`.lines)
 
+file_types = options.fetch(:file_types)
+file_patterns = options.fetch(:file_patterns).map { |pattern| pattern }
+file_patterns_regex = %r{#{file_patterns.join("|")}}
+
+files = output.uniq.sort.map(&:chomp)
+if file_types.any?
+  files = files.select do |file|
+    file_types.include?(file.split(".").last)
+  end
+end
+
+if file_patterns.any?
+  files = files.select do |file|
+    file_patterns_regex.match?(file)
+  end
+end
+
+puts files

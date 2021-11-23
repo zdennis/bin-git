@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 
-echo 'Branches merged into acceptance that are not in master:' && git log master..acceptance | grep -i 'Merge branch'
+main_branch=$(git get-main-branch)
+echo "Branches merged into acceptance that are not in $main_branch:" && git log "$main_branch..acceptance" | grep -i 'Merge branch'

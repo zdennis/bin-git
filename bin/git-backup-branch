@@ -42,6 +42,8 @@ OptionParser.new do |opts|
   end
 
   opts.on("-h", "--help", "Prints help message") do
+    main_branch = `git get-main-branch`.chomp
+
     puts <<~HELP
       #{SCRIPT_NAME} is used to create or list backup branches. It will use the current branch if no branch name
       is provided otherwise it will use the branch name provided.
@@ -61,7 +63,7 @@ OptionParser.new do |opts|
         #{SCRIPT_NAME} -r features/sign-up
 
         #{bold("# Backup a branch and tag it with an extra descriptor")}
-        #{SCRIPT_NAME} -t "before master rebase"
+        #{SCRIPT_NAME} -t "before #{main_branch} rebase"
 
         #{bold("# List all known backup branches for the current branch")}
         #{SCRIPT_NAME} -l

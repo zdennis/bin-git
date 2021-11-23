@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 
-git diff --name-status master..HEAD | grep -vE '^(D|R)' | cut -f2 | xargs bundle exec rubocop
+main_branch=$(git get-main-branch)
+git diff --name-status "$main_branch..HEAD" | grep -vE '^(D|R)' | cut -f2 | xargs bundle exec rubocop
