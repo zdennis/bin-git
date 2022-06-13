@@ -1,3 +1,23 @@
-#!/usr/bin/env bash
+#!/usr/bin/env ruby
 
-g(){ echo `git url`/compare/`git log -n1 --format='%H' $1`...`git cbranch`; }; g
+def get_base_branch(*possible_branches)
+  Array(possible_branches).find { |branch| `git branch`.lines.grep(branch).any? }
+end
+
+if ARGV.length == 0
+  base = get_base_branch("main", "master")
+  comparison = "#{base}...#{`git current-branch`}"
+elsif ARGV.length == 1
+  base = ARGV.first
+  comparison = base =~ /\.\.\/?/ ? base : "#{base}...#{`git current-branch`}"
+elsif ARGV.length == 2
+  comparison = "#{ARGV[0]}...#{ARGV[1]}"
+end
+
+url = [
+  `git url`.chomp,
+  "compare",
+  comparison
+].join("/")
+
+puts url
