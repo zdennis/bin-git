@@ -87,12 +87,8 @@ if branch.to_s.empty?
   exit 1
 end
 
-def branch_exists?(name, remote:)
-  if remote
-    `git branch -ar`.lines.grep(/#{Regexp.escape(name)}/).any?
-  else
-    `git branch -a`.lines.grep(/#{Regexp.escape(name)}/).any?
-  end
+def branch_exists?(name)
+  `git branch -a`.lines.grep(/#{Regexp.escape(name)}/).any?
 end
 
 if options.fetch(:list)
@@ -111,7 +107,7 @@ end
 count = 0
 max_tries = 25
 loop do
-  if branch_exists?(backup_branch, remote: options[:remote])
+  if branch_exists?(backup_branch)
     puts Term::ANSIColor.bright_black <<~MESSAGE.chomp
       #{backup_branch} exists
     MESSAGE
