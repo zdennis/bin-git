@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+if [ "$1" ]; then
+  tree=$1
+else
+  tree=`git current-branch`
+fi
+
+echo `git url`/tree/$tree
