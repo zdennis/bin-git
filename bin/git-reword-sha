@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+set -e
+
+if [ $# -eq 0 ]; then
+  echo "Must provide a SHA to reword as the argument."
+  echo "Usage: $0 abc123"
+  exit
+fi
+
+SHA=$1
+
+tempfile=$(mktemp)
+cat << SCRIPT >> $tempfile &&
+#!/usr/bin/env ruby
+GIT_REBASE_TODO_FILE = ARGV.shift || raise(ArgumentError, "Expected git rebase todo as first argument")
+REWORD_SHA = "$SHA".freeze
+contents = File.read(GIT_REBASE_TODO_FILE)
+
+sha2reword = REWORD_SHA.split(//)
+while sha2reword.length >= 6
+  sha2reword.pop
+  if contents.sub!(/pick #{sha2reword.join}/, "reword #{sha2reword.join}")
+    break
+  end
+end
+
+File.write(GIT_REBASE_TODO_FILE, contents)
+exit 0
+
+SCRIPT
+echo $tempfile
+chmod a+x $tempfile &&
+GIT_SEQUENCE_EDITOR=$tempfile git rebase -i $1^ &&
+cat << MESSAGE
+
+You have arrived SHA $SHA
+MESSAGE
