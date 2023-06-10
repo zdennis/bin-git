@@ -1,0 +1,110 @@
+#!/usr/bin/env ruby
+
+require "optparse"
+require 'shellwords'
+
+def require_or_install(name, version:, require_as: name)
+  require require_as
+rescue LoadError
+  begin
+    install_missing_gem name, version: version
+    Gem.refresh
+    require require_as
+  rescue
+    puts "#{name} #{version} could not be installed. You will need to install it manually."
+  end
+end
+
+require_or_install 'term-ansicolor', version: '1.7.1', require_as: 'term/ansicolor'
+
+SCRIPT_NAME = File.basename(__FILE__)
+
+options = {
+  after: nil,
+  before: nil,
+  filename_patterns: [],
+  oneline: false,
+  quiet: false,
+  debug: false
+}
+OptionParser.new do |opts|
+  opts.on("--after=DATETIME") do |datetime|
+    options[:after] = datetime
+  end
+
+  opts.on("--before=DATETIME") do |datetime|
+    options[:before] = datetime
+  end
+
+  opts.on("-f", "--filename-pattern=GLOB") do |glob|
+    options[:filename_patterns] << glob
+  end
+
+  opts.on("--oneline") do
+    options[:oneline] = true
+  end
+
+  opts.on("-q", "--quiet", "Suppress diff output") do
+    options[:quiet] = true
+  end
+
+  opts.on("--debug") do
+    options[:debug] = true
+  end
+
+  opts.on("-h", "--help") do
+    puts <<~HELP
+      #{SCRIPT_NAME} finds stashes that contain changes.
+
+      Examples:
+
+        #{Term::ANSIColor.bold("# Find stashes that modify any file matching shoryuken")}
+        #{SCRIPT_NAME} -f shoryuken
+
+        #{Term::ANSIColor.bold("# Find stashes that modify any file matching shoryuken in the past week")}
+        #{SCRIPT_NAME} -f shoryuken --after "1 week ago"
+
+        #{Term::ANSIColor.bold("# Find stashes and view diff")}
+        #{SCRIPT_NAME} -f shoryuken --after "1 week ago" --oneline
+
+        #{Term::ANSIColor.bold("# Find stashes with oneline commit message but without diff")}
+        #{SCRIPT_NAME} -f shoryuken --after "1 week ago" --oneline --quiet
+    HELP
+    puts
+    puts opts
+  end
+end.parse!
+
+after_datetime = options.fetch(:after)
+before_datetime = options.fetch(:before)
+filename_patterns = options.fetch(:filename_patterns)
+oneline = options.fetch(:oneline)
+quiet = options.fetch(:quiet)
+debug = options.fetch(:debug)
+
+list_command = %|git stash list|
+list_command << " --after=#{after_datetime.shellescape}" if after_datetime
+list_command << " --before=#{before_datetime.shellescape}" if before_datetime
+list_output = `#{list_command}`
+
+stashes = list_output.scan(/^[^:]+/)
+
+stashes.each do |stash|
+  show_command = %|git show --name-status #{stash.shellescape} --format=""|
+  puts Term::ANSIColor.bold "Running command: #{show_command}" if debug
+  files = `#{show_command}`.lines
+  found = files.any? do |file|
+    filename_patterns.find { |pattern| file.match?(pattern) }
+  end
+
+  if found
+    if oneline
+      command = %|git show --oneline #{stash.shellescape}|
+      command << " --quiet" if quiet
+      puts Term::ANSIColor.bold "Running command: #{command}" if debug
+      system(command)
+    else
+      puts "#{stash}"
+    end
+  end
+end
