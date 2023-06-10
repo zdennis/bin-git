@@ -105,7 +105,7 @@ else
 end
 
 count = 0
-max_tries = 25
+max_tries = 50
 loop do
   if branch_exists?(backup_branch)
     puts Term::ANSIColor.bright_black <<~MESSAGE.chomp
