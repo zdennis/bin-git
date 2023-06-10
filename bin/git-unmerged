@@ -219,7 +219,7 @@ class GitUnmerged
   end
 
   def main_branch
-    @main_branch ||= `git get-maain-branch`.chomp
+    @main_branch ||= `git get-main-branch`.chomp
   end
 
   def branch_description
