@@ -6,7 +6,8 @@ options = {
   dry_run: false,
   git_args: nil,
   file_patterns: [],
-  file_types: []
+  file_types: [],
+  include_specs_for_changed_implementation_files: false
 }
 OptionParser.new do |opts|
   opts.on("-f", "--file-type=FILE_TYPE", "File type/extension. Can be comma-separate or specified multiple times") do |types|
@@ -20,10 +21,22 @@ OptionParser.new do |opts|
   opts.on("-n", "--dry-run", "Performs a dry run printing out what it would do") do
     options[:dry_run] = true
   end
+
+  opts.on("-i", "--include-specs", "Include specs for changed implementation files") do
+    options[:include_specs_for_changed_implementation_files] = true
+  end
 end.parse!
 
 main_branch = `git get-main-branch`.chomp
-options[:git_args] = ARGV.any? ? ARGV.join(' ') : "#{main_branch}...HEAD"
+
+options[:git_args] = case ARGV.first
+  when nil
+    "#{main_branch}...HEAD"
+  when /\.\./
+    ARGV.first
+  else
+    ARGV.join(' ')
+  end
 
 # The lowercase -d in the --diff-filter used below is for excluding deleted files.
 output = []
@@ -38,6 +51,15 @@ files = output.uniq.sort.map(&:chomp)
 if file_types.any?
   files = files.select do |file|
     file_types.include?(file.split(".").last)
+  end
+end
+
+if options[:include_specs_for_changed_implementation_files]
+  all_spec_files = Dir["spec/**/*_spec.rb"]
+  files.dup.each do |file|
+    possible_spec_file = File.join("spec/unit/", file.sub(".rb", "_spec.rb"))
+    match = all_spec_files.find { |spec_file| spec_file.match(possible_spec_file) }
+    files << match if match
   end
 end
 
