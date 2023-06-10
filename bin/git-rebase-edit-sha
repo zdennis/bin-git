@@ -10,7 +10,7 @@ fi
 
 SHA=$1
 
-tempfile=`mktemp`
+tempfile=$(mktemp)
 cat << SCRIPT >> $tempfile &&
 #!/usr/bin/env ruby
 GIT_REBASE_TODO_FILE = ARGV.shift || raise(ArgumentError, "Expected git rebase todo as first argument")
