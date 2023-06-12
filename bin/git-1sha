@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# Print out the SHA of each commit from main/master to the
+# current HEAD (default) or a sha/branch/etc reference when provided.
+
+GITREF=${1:-HEAD}
+main_branch=$(git get-main-branch)
+
+git log --pretty="format:%h" "$main_branch..$GITREF"
