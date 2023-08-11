@@ -3,28 +3,30 @@
 set -e
 
 if [ $# -eq 0 ]; then
-  echo "Must provide a SHA to edit as the argument."
+  echo "Must provide a SHA or list of SHAs to edit as the argument."
   echo "Usage: $0 abc123"
+  echo "Usage: $0 abc123 def234 ghi456"
   exit
 fi
 
-SHA=$1
+SHAS="$@"
 
 tempfile=$(mktemp)
 cat << SCRIPT >> $tempfile &&
 #!/usr/bin/env ruby
 GIT_REBASE_TODO_FILE = ARGV.shift || raise(ArgumentError, "Expected git rebase todo as first argument")
-EDIT_SHA = "$SHA".freeze
+EDIT_SHAS = "$SHAS".freeze
 contents = File.read(GIT_REBASE_TODO_FILE)
 
-sha2edit = EDIT_SHA.split(//)
-while sha2edit.length >= 6
-  sha2edit.pop
-  if contents.sub!(/pick #{sha2edit.join}/, "edit #{sha2edit.join}")
-    break
-  end
+# only use the first seven characters of each sha as that is what
+# is used by git
+shas2edit = EDIT_SHAS.split(/\s+|\s*,\s*/).flatten.map { |sha| sha[0..6] }
+#File.write("/tmp/z.shas2edit", shas2edit.inspect)
+shas2edit.each do |sha|
+  contents.sub!(/pick #{sha}\w*/, "edit #{sha}")
 end
 
+# File.write("/tmp/z.git-rebase-todo-file", contents)
 File.write(GIT_REBASE_TODO_FILE, contents)
 exit 0
 
@@ -34,5 +36,5 @@ chmod a+x $tempfile &&
 GIT_SEQUENCE_EDITOR=$tempfile git rebase -i $1^ &&
 cat << MESSAGE
 
-You have arrived SHA $SHA
+You have arrived at the first SHA.
 MESSAGE
