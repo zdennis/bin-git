@@ -5,36 +5,51 @@ set -e
 if [ $# -eq 0 ]; then
   echo "Must provide a SHA or list of SHAs to edit as the argument."
   echo "Usage: $0 abc123"
-  echo "Usage: $0 abc123 def234 ghi456"
+  echo "Usage with multiple shas: $0 abc123 def234 ghi456"
+  echo "Usage with a single range of commits: $0 abc123..ghi456"
   exit
 fi
 
-SHAS="$@"
+POSSIBLE_SHAS=$@
+FIRST_SHA=$1
+
+# Test if we have a range of commits, then expand into individual commits
+if echo "$POSSIBLE_SHAS" | grep -Eq '\.\.' ; then
+  # --reverse is important on th enext line. It ensures we are sorting
+  # commits in oldest-first order which is required for FIRST_SHA to be set correctly
+  SHAS=$(git log --format=format:%H "$POSSIBLE_SHAS" --reverse | tr '\n' ' ')
+  FIRST_SHA=$(echo "$SHAS" | cut -f1 -d" ")
+
+  echo
+  echo "Note: when using a range be sure to include a caret ^ if you want the start of the range to be inclusive"
+  echo
+fi
 
 tempfile=$(mktemp)
 cat << SCRIPT >> $tempfile &&
 #!/usr/bin/env ruby
 GIT_REBASE_TODO_FILE = ARGV.shift || raise(ArgumentError, "Expected git rebase todo as first argument")
+# File.write("/tmp/z.shas", "$SHAS".inspect) # debug line
 EDIT_SHAS = "$SHAS".freeze
 contents = File.read(GIT_REBASE_TODO_FILE)
 
 # only use the first seven characters of each sha as that is what
 # is used by git
 shas2edit = EDIT_SHAS.split(/\s+|\s*,\s*/).flatten.map { |sha| sha[0..6] }
-#File.write("/tmp/z.shas2edit", shas2edit.inspect)
+# File.write("/tmp/z.shas2edit", shas2edit.inspect) # debug line
 shas2edit.each do |sha|
   contents.sub!(/pick #{sha}\w*/, "edit #{sha}")
 end
 
-# File.write("/tmp/z.git-rebase-todo-file", contents)
+# File.write("/tmp/z.git-rebase-todo-file", contents) # debug line
 File.write(GIT_REBASE_TODO_FILE, contents)
 exit 0
 
 SCRIPT
 echo $tempfile
 chmod a+x $tempfile &&
-GIT_SEQUENCE_EDITOR=$tempfile git rebase -i $1^ &&
+GIT_SEQUENCE_EDITOR=$tempfile git rebase -i $FIRST_SHA^ &&
 cat << MESSAGE
 
-You have arrived at the first SHA.
+You have arrived at the first SHA: $FIRST_SHA
 MESSAGE
