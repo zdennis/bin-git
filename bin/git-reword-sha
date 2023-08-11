@@ -3,36 +3,53 @@
 set -e
 
 if [ $# -eq 0 ]; then
-  echo "Must provide a SHA to reword as the argument."
+  echo "Must provide a SHA or list of SHAs to edit as the argument."
   echo "Usage: $0 abc123"
+  echo "Usage with multiple shas: $0 abc123 def234 ghi456"
+  echo "Usage with a single range of commits: $0 abc123..ghi456"
   exit
 fi
 
-SHA=$1
+POSSIBLE_SHAS=$@
+FIRST_SHA=$1
+
+# Test if we have a range of commits, then expand into individual commits
+if echo "$POSSIBLE_SHAS" | grep -Eq '\.\.' ; then
+  # --reverse is important on th enext line. It ensures we are sorting
+  # commits in oldest-first order which is required for FIRST_SHA to be set correctly
+  SHAS=$(git log --format=format:%H "$POSSIBLE_SHAS" --reverse | tr '\n' ' ')
+  FIRST_SHA=$(echo "$SHAS" | cut -f1 -d" ")
+
+  echo
+  echo "Note: when using a range be sure to include a caret ^ if you want the start of the range to be inclusive"
+  echo
+fi
 
 tempfile=$(mktemp)
 cat << SCRIPT >> $tempfile &&
 #!/usr/bin/env ruby
 GIT_REBASE_TODO_FILE = ARGV.shift || raise(ArgumentError, "Expected git rebase todo as first argument")
-REWORD_SHA = "$SHA".freeze
+# File.write("/tmp/z.shas", "$SHAS".inspect) # debug line
+REWORD_SHAS = "$SHAS".freeze
 contents = File.read(GIT_REBASE_TODO_FILE)
 
-sha2reword = REWORD_SHA.split(//)
-while sha2reword.length >= 6
-  sha2reword.pop
-  if contents.sub!(/pick #{sha2reword.join}/, "reword #{sha2reword.join}")
-    break
-  end
+# only use the first seven characters of each sha as that is what
+# is used by git
+shas2reword = REWORD_SHAS.split(/\s+|\s*,\s*/).flatten.map { |sha| sha[0..6] }
+# File.write("/tmp/z.shas2reword", shas2reword.inspect) # debug line
+shas2reword.each do |sha|
+  contents.sub!(/pick #{sha}\w*/, "reword #{sha}")
 end
 
+# File.write("/tmp/z.git-rebase-todo-file", contents) # debug line
 File.write(GIT_REBASE_TODO_FILE, contents)
 exit 0
 
 SCRIPT
 echo $tempfile
 chmod a+x $tempfile &&
-GIT_SEQUENCE_EDITOR=$tempfile git rebase -i $1^ &&
+GIT_SEQUENCE_EDITOR=$tempfile git rebase -i $FIRST_SHA^ &&
 cat << MESSAGE
 
-You have arrived SHA $SHA
+You have arrived at the first SHA: $FIRST_SHA
 MESSAGE
