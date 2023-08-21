@@ -2,7 +2,7 @@
 
 require 'json'
 
-if `which gh`.empty?
+if %x{which gh}.empty?
   puts <<~MESSAGE
     The gh command is not found. Possible installation methods:
 
@@ -15,15 +15,15 @@ if `which gh`.empty?
 end
 
 ARGV_PROVIDED_SHA_OR_REF = ARGV.shift
-SHA_OR_REF = ARGV_PROVIDED_SHA_OR_REF || `git sha`.chomp
+SHA_OR_REF = ARGV_PROVIDED_SHA_OR_REF || %x{git sha}.chomp
 
 if SHA_OR_REF =~ /^\d+$/
   # when SHA_OR_REF is a PR number itself
-  open `git pull-url $SHA_OR_REF`
+  open %x{git pull-url $SHA_OR_REF}
 else
-  repos = `git config remote.origin.url`.scan(/github.com[:\/](.*)/).flatten.first.to_s.sub('.git', '')
+  repos = %x{git config remote.origin.url}.scan(/github.com[:\/](.*)/).flatten.first.to_s.sub('.git', '')
   if repos.empty?
-    puts "The origin url could not be extracted running `git config remote.origin.url`"
+    puts "The origin url could not be extracted running %x{git config remote.origin.url}"
     exit 1
   end
 
@@ -41,13 +41,13 @@ else
       exit 1
     end
   else
-    org_name = `git github-org-name`.chomp
-    branch_name = `git rev-parse --abbrev-ref HEAD`.chomp
-    current_branch = `git current-branch`
+    org_name = %x{git github-org-name}.chomp
+    branch_name = %x{git rev-parse --abbrev-ref HEAD}.chomp
+    current_branch = %x{git current-branch}
 
     json_response = %x{gh pr create --web --fill-first --base="#{base_branch}" --head="#{current_branch}"}
     if json_response.length == 0
-      system "open `git pull-url`"
+      system "open %x{git pull-url}"
       exit 0
     end
   end
