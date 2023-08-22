@@ -23,6 +23,9 @@ if echo "$POSSIBLE_SHAS" | grep -Eq '\.\.' ; then
   echo
   echo "Note: when using a range be sure to include a caret ^ if you want the start of the range to be inclusive"
   echo
+else
+  SHAS="$POSSIBLE_SHAS"
+  FIRST_SHA=$1
 fi
 
 tempfile=$(mktemp)
