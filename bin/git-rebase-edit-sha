@@ -11,7 +11,7 @@ if [ $# -eq 0 ]; then
 fi
 
 POSSIBLE_SHAS=$@
-FIRST_SHA=$1
+
 
 # Test if we have a range of commits, then expand into individual commits
 if echo "$POSSIBLE_SHAS" | grep -Eq '\.\.' ; then
@@ -23,6 +23,9 @@ if echo "$POSSIBLE_SHAS" | grep -Eq '\.\.' ; then
   echo
   echo "Note: when using a range be sure to include a caret ^ if you want the start of the range to be inclusive"
   echo
+else
+  SHAS="$POSSIBLE_SHAS"
+  FIRST_SHA=$1
 fi
 
 tempfile=$(mktemp)
