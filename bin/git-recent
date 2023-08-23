@@ -1,5 +1,57 @@
-#!/usr/bin/env sh
+#!/usr/bin/env ruby
 
-count=${1:-10}
+require "optparse"
 
-git for-each-ref --count="${count}" --sort=-committerdate --format='%(refname:short)' refs/heads/
+def require_or_install(name, version:, require_as: name)
+  require require_as
+rescue LoadError
+  begin
+    install_missing_gem name, version: version
+    Gem.refresh
+    require require_as
+  rescue
+    puts "#{name} #{version} could not be installed. You will need to install it manually."
+  end
+end
+
+require_or_install 'term-ansicolor', version: '1.7.1', require_as: 'term/ansicolor'
+
+options = {
+  number: 10,
+  verbose: false
+}
+
+OptionParser.new do |opts|
+  opts.on("-h", "--help", "Prints help") do
+    puts opts
+    puts <<~MESSAGE
+
+      Prints out a list of recent branches that you worked on.
+
+      Takes one argument: the number of recent branches to show. Default: #{options.fetch(:number)}.
+
+      Example usage:
+
+        # show the ten most recent branches worked on
+        git recent
+
+        # show the one hundred most recent branches
+        git recent 100
+    MESSAGE
+
+    exit
+  end
+
+  opts.on("-v", "--verbose", "Turn on verbose output") do
+    options[:verbose] = true
+  end
+end.parse!
+
+count = ARGV.shift.to_i
+count = count > 0 ? count : options.fetch(:number)
+
+verbose = options.fetch(:verbose)
+
+command = %|git for-each-ref --count="#{count}" --sort=-committerdate --format='%(refname:short)' refs/heads/|
+puts Term::ANSIColor.bold("Running command: #{command}") if verbose
+system command
