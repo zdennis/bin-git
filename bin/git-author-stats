@@ -1,0 +1,9 @@
+#!/bin/sh
+
+#
+# Show author/contributor stats given
+# a path in the repository.
+#
+# Example: git author-stats app/
+
+git shortlog -sn --all "$@"
