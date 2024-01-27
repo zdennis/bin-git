@@ -45,10 +45,10 @@ else
     branch_name = %x{git rev-parse --abbrev-ref HEAD}.chomp
     current_branch = %x{git current-branch}
 
-    json_response = %x{gh pr create --web --fill-first --base="#{base_branch}" --head="#{current_branch}"}
-    if json_response.length == 0
-      system "open %x{git pull-url}"
-      exit 0
-    end
+    template = ".github/PULL_REQUEST_TEMPLATE.md"
+
+    command = %|gh pr create --web --base="#{base_branch}" --head="#{current_branch}"|
+    command << " --template #{File.basename(template)}" if File.exist?(template)
+    system command
   end
 end
