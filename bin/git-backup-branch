@@ -1,23 +1,24 @@
 #!/usr/bin/env ruby
 
 require 'optparse'
+require 'date'
 
 def require_or_install(name, version:, require_as: name)
   require require_as
-rescue LoadError
+rescue LoadError => ex
   begin
-    install_missing_gem name, version: version
+    puts "Missing gem #{name}. Installing #{name} #{version}..."
+    system "gem install #{name} -v #{version}"
     Gem.refresh
     require require_as
-  rescue
+  rescue => ex
+    puts ex
     puts "#{name} #{version} could not be installed. You will need to install it manually."
+    exit 1
   end
 end
 
 require_or_install 'term-ansicolor', version: '1.7.1', require_as: 'term/ansicolor'
-
-require 'term/ansicolor'
-include Term::ANSIColor
 
 SCRIPT_NAME = File.basename(__FILE__)
 
@@ -50,25 +51,25 @@ OptionParser.new do |opts|
 
       Examples:
 
-        #{bold("# Backup current branch")}
+        #{Term::ANSIColor.bold("# Backup current branch")}
         #{SCRIPT_NAME}
 
-        #{bold("# Backup specific branch")}
+        #{Term::ANSIColor.bold("# Backup specific branch")}
         #{SCRIPT_NAME} features/sign-up
 
-        #{bold("# Backup the remote branch for the current branch")}
+        #{Term::ANSIColor.bold("# Backup the remote branch for the current branch")}
         #{SCRIPT_NAME} -r
 
-        #{bold("# Backup the remote branch for a specific branch")}
+        #{Term::ANSIColor.bold("# Backup the remote branch for a specific branch")}
         #{SCRIPT_NAME} -r features/sign-up
 
-        #{bold("# Backup a branch and tag it with an extra descriptor")}
+        #{Term::ANSIColor.bold("# Backup a branch and tag it with an extra descriptor")}
         #{SCRIPT_NAME} -t "before #{main_branch} rebase"
 
-        #{bold("# List all known backup branches for the current branch")}
+        #{Term::ANSIColor.bold("# List all known backup branches for the current branch")}
         #{SCRIPT_NAME} -l
 
-        #{bold("# List all known backup branches for a specific branch")}
+        #{Term::ANSIColor.bold("# List all known backup branches for a specific branch")}
         #{SCRIPT_NAME} -l features/sign-up
     HELP
     puts
@@ -78,6 +79,7 @@ OptionParser.new do |opts|
 end.parse!
 
 branch = ARGV.shift || `git current-branch`.chomp
+todays_date = Date.today.to_s
 
 if branch.to_s.empty?
   STDERR.puts Term::ANSIColor.red <<~ERROR.chomp
@@ -106,13 +108,14 @@ end
 
 count = 0
 max_tries = 50
+backup_branch_was = backup_branch.dup
 loop do
   if branch_exists?(backup_branch)
     puts Term::ANSIColor.bright_black <<~MESSAGE.chomp
       #{backup_branch} exists
     MESSAGE
 
-    backup_branch = "#{branch}.bak#{count+=1}"
+    backup_branch = "#{backup_branch_was}.bak#{count+=1}"
     if count >= max_tries
       puts Term::ANSIColor.red <<~ERROR.chomp
         Exhausted attempts to create a backup branch!
@@ -125,7 +128,8 @@ loop do
   end
 end
 
-backup_branch_with_tag = [backup_branch, options.fetch(:tag)].join
+backup_branch += ".#{todays_date}"
+backup_branch_with_tag = [backup_branch, options.fetch(:tag)].compact.join
 command = "git branch #{backup_branch_with_tag} #{branch}"
 puts command
 if system(command)
