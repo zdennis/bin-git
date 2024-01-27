@@ -1,0 +1,30 @@
+#!/usr/bin/env ruby
+
+require 'term/ansicolor'
+
+#
+# Use github-codeowners to see who owns a given file.
+#
+
+GITHUB_CODEOWNERS_COMMAND="github-codeowners"
+
+def command_exists?(command)
+  # `command` is the POSIX-compatible way to check if a command is present.
+  # Reference: https://pubs.opengroup.org/onlinepubs/9699919799/utilities/command.html
+  check_command = "command -v #{command} > /dev/null 2>&1"
+  system(check_command)
+end
+
+if command_exists?(GITHUB_CODEOWNERS_COMMAND)
+  exec "github-codeowners who #{ARGV.join(' ')}"
+else
+  puts Term::ANSIColor.red <<~MESSAGE
+    Uh-oh, the command "#{GITHUB_CODEOWNERS_COMMAND}" can't be found.
+    It may need to be installed
+
+    Please install it via npm. E.g.:
+
+      npm install -g #{GITHUB_CODEOWNERS_COMMAND}
+  MESSAGE
+  exit 1
+end
