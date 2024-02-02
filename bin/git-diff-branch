@@ -1,0 +1,16 @@
+#!/bin/sh
+
+#
+# This is used to see differences between your current topic branch/head
+# and a target source branch/ref.
+#
+# The default is to compare a local branch against its remote upstream. E.g.
+#
+#   git diff-branch # => git range-diff -p @{u}...head
+#
+# You can pass in an argument to change the source:
+#
+#  git diff-branch master # => git range-diff -p master...head
+
+base_ref=${1:-"@{u}"}
+git range-diff -p "${base_ref}"...head
