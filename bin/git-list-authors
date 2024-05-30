@@ -1,0 +1,79 @@
+#!/usr/bin/env ruby
+
+require "optparse"
+
+def require_or_install(name, version:, require_as: name)
+  require require_as
+rescue LoadError => ex
+  begin
+    puts "Missing gem #{name}. Installing #{name} #{version}..."
+    system "gem install #{name} -v #{version}"
+    Gem.refresh
+    require require_as
+  rescue => ex
+    puts ex
+    puts "#{name} #{version} could not be installed. You will need to install it manually."
+    exit 1
+  end
+end
+
+require_or_install 'term-ansicolor', version: '1.7.1', require_as: 'term/ansicolor'
+
+options = {
+  verbose: false,
+}
+OptionParser.new do |opts|
+  opts.banner = "Usage: git-list-authors [options]"
+
+  opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
+    options[:verbose] = v
+  end
+
+  opts.on("-h", "--help", "Prints help") do
+    puts opts
+    puts <<~MESSAGE
+
+      Prints out the list of unique authors that have modified the given file/path(s).
+
+      It will only show each author once, even if they have multiple commits.
+      Authors are sorted by the time of their most recent commit.
+
+      Example usage:
+
+        git list-authors path/to/some/file
+
+    MESSAGE
+
+    exit
+  end
+end.parse!
+
+verbose = options[:verbose]
+delimiter = "|"
+
+Author = Struct.new(:name, :time) do
+  def to_s
+    "#{name} (#{time})"
+  end
+
+  def ==(other)
+    name == other.name
+  end
+end
+
+command = "git log --pretty=format:'%an#{delimiter}%ar' #{ARGV.join(' ')}"
+
+if verbose
+  puts Term::ANSIColor.bold("Running command: #{command}") if verbose
+end
+
+all_authors = %x{#{command}}.lines.map { |line| line.chomp.split(delimiter) }.map do |name, time|
+  Author.new(name, time)
+end
+
+authors = []
+all_authors.each do |author|
+  authors << author unless authors.include? author
+end
+
+puts authors
