@@ -122,5 +122,5 @@ else
     end
   end
 
-  puts files
+  puts files.sort.uniq
 end
