@@ -48,7 +48,10 @@ else
     template = ".github/PULL_REQUEST_TEMPLATE.md"
 
     command = %|gh pr create --web --base="#{base_branch}" --head="#{current_branch}"|
-    command << " --template #{File.basename(template)}" if File.exist?(template)
+
+    # template option broken? 2025-01-15
+    # however, if it is omitted then the template works when opening the PR
+    # command << " --template #{File.basename(template)}" if File.exist?(template)
     system command
   end
 end
