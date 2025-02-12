@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+
+GITHUB_USER=$(git config github.user)
+
+if [ -z "$GITHUB_USER" ]; then
+  echo "Error: GitHub user is not set in git config. Please set with 'git config --global github.user <username>'"
+  exit 1
+else
+  gh pr ls --author "$GITHUB_USER"
+fi
