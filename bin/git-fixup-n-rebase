@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+SHA=$1
+
+git fixup $SHA && git rebase-sha $SHA
