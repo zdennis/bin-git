@@ -1,0 +1,19 @@
+#!/usr/bin/env ruby
+
+def require_or_install(name, version:, require_as: name)
+  require require_as
+rescue LoadError
+  begin
+    install_missing_gem name, version: version
+    Gem.refresh
+    require require_as
+  rescue
+    puts "#{name} #{version} could not be installed. You will need to install it manually."
+  end
+end
+
+require_or_install 'term-ansicolor', version: '1.7.1', require_as: 'term/ansicolor'
+
+BASE_URL = `git url`.chomp
+
+%x{open '#{BASE_URL}/pulls'}
