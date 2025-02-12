@@ -5,5 +5,10 @@
 # a path in the repository.
 #
 # Example: git author-stats app/
+# Example: git author-stats file1.rb file2.rb
 
-git shortlog -sn --all "$@"
+for path in "$@"; do
+  echo "Author stats for $path:"
+  git shortlog -sne --all "$path"
+  echo
+done
