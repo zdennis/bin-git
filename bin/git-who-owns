@@ -1,6 +1,22 @@
 #!/usr/bin/env ruby
 
-require 'term/ansicolor'
+def require_or_install(name, version:, require_as: name)
+  require require_as
+rescue LoadError => ex
+  begin
+    puts "Missing gem #{name}. Installing #{name} #{version}..."
+    system "gem install #{name} -v #{version}"
+    Gem.refresh
+    require require_as
+  rescue => ex
+    puts ex
+    puts "#{name} #{version} could not be installed. You will need to install it manually."
+    exit 1
+  end
+end
+
+require_or_install 'term-ansicolor', version: '1.7.1', require_as: 'term/ansicolor'
+
 
 #
 # Use github-codeowners to see who owns a given file.
