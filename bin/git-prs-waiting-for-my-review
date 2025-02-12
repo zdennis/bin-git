@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+
+# https://github.com/cli/cli/discussions/4067
+gh search prs --state=open --review-requested=@me "$@"
