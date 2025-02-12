@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+
+GITHUB_USER=$1
+
+if [ -z "$GITHUB_USER" ]; then
+  echo 'No user passed in, defaulting to "git config github.user"'
+  GITHUB_USER=$(git config github.user)
+
+  if [ -z "$GITHUB_USER" ]; then
+    echo "Error: GitHub user is not set in git config. Please set with 'git config --global github.user <username>'"
+    exit 1
+  fi
+fi
+
+echo "Searching for pulls for GitHub user: $GITHUB_USER"
+gh pr ls --author "$GITHUB_USER"
