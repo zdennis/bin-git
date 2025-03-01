@@ -1,0 +1,3 @@
+# Don't commit binaries; run git-build-go-helpers to build+install
+bin/git-restore-deleted
+go-commands/git-restore-deleted

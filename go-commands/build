@@ -1,0 +1,43 @@
+#!/bin/bash
+set -e  # Exit on error
+
+# Ensure a Go source file is provided
+if [[ $# -ne 1 ]]; then
+    echo "Usage: $0 <go-source-file>"
+    exit 1
+fi
+
+SOURCE_FILE="$1"
+
+# Ensure the file exists
+if [[ ! -f "$SOURCE_FILE" ]]; then
+    echo "Error: File '$SOURCE_FILE' not found!"
+    exit 1
+fi
+
+# Extract filename without extension for binary & checksum file
+BASENAME=$(basename "$SOURCE_FILE" .go)
+CHECKSUM_DIR=".checksums"
+CHECKSUM_FILE="$CHECKSUM_DIR/$BASENAME.md5sum"
+BINARY_FILE="$BASENAME"
+
+# Ensure the .checksums directory exists
+mkdir -p "$CHECKSUM_DIR"
+
+# Compute the current md5sum
+CURRENT_MD5=$(md5sum "$SOURCE_FILE")
+
+# Check if the checksum file exists and compare
+if [[ -f "$CHECKSUM_FILE" ]] && grep -q "$CURRENT_MD5" "$CHECKSUM_FILE"; then
+    echo "No changes detected in $SOURCE_FILE. Skipping rebuild."
+else
+    echo "Changes detected in $SOURCE_FILE. Rebuilding..."
+
+    # Save the new checksum
+    echo "$CURRENT_MD5" > "$CHECKSUM_FILE"
+
+    # Build the Go file
+    go build -o "$BINARY_FILE" "$SOURCE_FILE"
+
+    echo "Build complete! Binary: $BINARY_FILE"
+fi

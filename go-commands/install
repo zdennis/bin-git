@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+
+set -e  # Exit on error
+
+# ANSI escape sequence for bright bold text
+BOLD_BRIGHT="\033[1;90m"  # Bright bold gray for filenames
+BRIGHT_GREEN="\033[92m" # Bright green for "done"
+RESET="\033[0m"           # Reset color
+
+echo "Copying git binaries to bin-git/bin directory..."
+
+# Find all binaries starting with "git-" in the current directory
+for file in git-*; do
+    # Ensure it's a file and executable
+    if [[ -f "$file" && -x "$file" ]]; then
+        printf "  ${BOLD_BRIGHT}$file${RESET}  "
+        cp "$file" ../bin/
+        echo "${BRIGHT_GREEN}done${RESET}"
+    fi
+done
+
+echo "Copy complete!"

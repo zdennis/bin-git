@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+
+set -e  # Exit on error
+
+./build git-restore-deleted.go
