@@ -69,6 +69,8 @@ main_branch = `git get-main-branch`.chomp
 options[:git_args] = case ARGV.first
   when nil
     "#{main_branch}...HEAD"
+  when /\d+/
+    "HEAD~#{ARGV.first}"
   when /\.\./
     ARGV.first
   else
