@@ -49,9 +49,13 @@ else
 
     command = %|gh pr create --web --base="#{base_branch}" --head="#{current_branch}"|
 
+    # Github broke the client again and template(s) aren't working so pass through --body-file now.
+    command << " --body-file #{template}" if File.exist?(template)
+
     # template option broken? 2025-01-15
     # however, if it is omitted then the template works when opening the PR
     # command << " --template #{File.basename(template)}" if File.exist?(template)
+    puts command
     system command
   end
 end
