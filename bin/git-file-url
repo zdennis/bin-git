@@ -1,0 +1,82 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+
+options = {
+  ref: nil,
+  line: nil
+}
+
+parser = OptionParser.new do |opts|
+  opts.banner = "Usage: git file-url [options] FILE [FILE...]"
+  opts.separator ""
+  opts.separator "Generate GitHub URLs for file(s)"
+  opts.separator ""
+  opts.separator "Options:"
+
+  opts.on("-r", "--ref REF", "Branch, tag, or commit SHA (defaults to current branch)") do |ref|
+    options[:ref] = ref
+  end
+
+  opts.on("-l", "--line LINE", "Line number or range (e.g., 42 or 42:50)") do |line|
+    options[:line] = line
+  end
+
+  opts.on("-h", "--help", "Show this help message") do
+    puts opts
+    exit
+  end
+end
+
+begin
+  parser.parse!
+rescue OptionParser::InvalidOption, OptionParser::MissingArgument => e
+  puts "Error: #{e.message}"
+  puts parser
+  exit 1
+end
+
+if ARGV.empty?
+  puts "Error: At least one FILE path is required"
+  puts parser
+  exit 1
+end
+
+file_paths = ARGV
+
+# Get base URL
+base_url = %x{git url}.chomp
+
+if base_url.empty?
+  puts "Error: Could not determine repository URL"
+  exit 1
+end
+
+# Get ref (branch/commit)
+ref = options[:ref] || %x{git current-branch}.chomp
+
+if ref.empty?
+  puts "Error: Could not determine branch"
+  exit 1
+end
+
+# Generate URLs for each file
+file_paths.each do |file_path|
+  url = "#{base_url}/blob/#{ref}/#{file_path}"
+
+  # Add line number(s) if specified
+  if options[:line]
+    if options[:line] =~ /^(\d+):(\d+)$/
+      # Line range
+      url << "#L#{$1}-L#{$2}"
+    elsif options[:line] =~ /^(\d+)$/
+      # Single line
+      url << "#L#{$1}"
+    else
+      puts "Error: Invalid line format. Use a number (e.g., 42) or range (e.g., 42:50)"
+      exit 1
+    end
+  end
+
+  puts url
+end
