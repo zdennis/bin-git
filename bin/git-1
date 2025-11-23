@@ -1,3 +1,40 @@
-#!/usr/bin/env sh
+#!/usr/bin/env ruby
 
-git log --oneline $@
+require 'optparse'
+
+options = {
+  author: false
+}
+OptionParser.new do |opts|
+  opts.banner = "Usage: git-1 [options] [paths]"
+
+  opts.on("--author", "Include author in the output") do
+    options[:author] = true
+  end
+
+  opts.on("-a", "Alias for --author") do
+    options[:author] = true
+  end
+end.parse!(into: options)
+
+main_branch = %x{git get-main-branch}.chomp
+gitref = ARGV.shift
+if gitref.nil?
+  gitref = "#{main_branch}...HEAD"
+elsif gitref =~ /^HEAD~\d+/i
+  gitref = ARGV.first
+elsif gitref =~ /\d+/i
+  gitref = "HEAD~#{ARGV.first}"
+elsif gitref =~ /\.\./
+  # do nothing, already in the correct format
+else
+  gitref = ARGV.join(' ')
+end
+
+# Construct the git log command
+cmd = ["git log --oneline --color"]
+cmd << "--format='%C(auto)%h %C(bold blue)%an %C(reset)%s'" if options[:author]
+cmd << gitref if gitref
+#cmd << "-- #{paths.join(' ')}" unless paths.empty?
+
+ system cmd.join(' ')
