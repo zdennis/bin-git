@@ -43,19 +43,30 @@ else
   else
     org_name = %x{git github-org-name}.chomp
     branch_name = %x{git rev-parse --abbrev-ref HEAD}.chomp
-    current_branch = %x{git current-branch}
+    current_branch = %x{git current-branch}.chomp
 
-    template = ".github/PULL_REQUEST_TEMPLATE.md"
+    # Check if a PR already exists for the current branch (with any base branch)
+    existing_prs_json = %x{gh pr list --head "#{current_branch}" --json number,url,baseRefName}
+    existing_prs = JSON.parse(existing_prs_json)
 
-    command = %|gh pr create --web --base="#{base_branch}" --head="#{current_branch}"|
+    if !existing_prs.empty?
+      pr = existing_prs.first
+      puts "Found existing PR ##{pr['number']} (base: #{pr['baseRefName']})"
+      puts "Opening: #{pr['url']}"
+      system "open", pr['url']
+    else
+      template = ".github/PULL_REQUEST_TEMPLATE.md"
 
-    # Github broke the client again and template(s) aren't working so pass through --body-file now.
-    command << " --body-file #{template}" if File.exist?(template)
+      command = %|gh pr create --web --base="#{base_branch}" --head="#{current_branch}"|
 
-    # template option broken? 2025-01-15
-    # however, if it is omitted then the template works when opening the PR
-    # command << " --template #{File.basename(template)}" if File.exist?(template)
-    puts command
-    system command
+      # Github broke the client again and template(s) aren't working so pass through --body-file now.
+      command << " --body-file #{template}" if File.exist?(template)
+
+      # template option broken? 2025-01-15
+      # however, if it is omitted then the template works when opening the PR
+      # command << " --template #{File.basename(template)}" if File.exist?(template)
+      puts command
+      system command
+    end
   end
 end
