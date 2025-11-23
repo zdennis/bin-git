@@ -1,0 +1,119 @@
+#!/usr/bin/env ruby
+
+require 'json'
+require 'open3'
+require 'set'
+require 'time'
+
+if ARGV.empty?
+  puts "Usage: git find-prs-for-file FILE [FILE...]"
+  puts "Find all open and closed pull requests that modified the specified file(s)"
+  exit 1
+end
+
+file_paths = ARGV.join(" ")
+
+# Get repository info (owner/repo format)
+repo_url = %x{git config --get remote.origin.url}.chomp
+if repo_url.empty?
+  puts "Error: Could not determine repository URL"
+  exit 1
+end
+
+# Parse owner/repo from URL (handle both SSH and HTTPS formats)
+if repo_url =~ /github\.com[\/:](.+?)\/(.+?)(\.git)?$/
+  owner = $1
+  repo = $2
+else
+  puts "Error: Could not parse GitHub repository from URL: #{repo_url}"
+  exit 1
+end
+
+# Get all commits that touched these files
+puts "Searching commits that modified: #{file_paths}"
+commit_output = %x{git log --pretty="format:%H" -- #{file_paths}}.chomp
+commit_shas = commit_output.lines.map(&:chomp)
+
+if commit_shas.empty?
+  puts "No commits found for: #{file_paths}"
+  exit 0
+end
+
+puts "Found #{commit_shas.count} commit(s), checking for associated pull requests..."
+
+# Track unique PRs using a hash keyed by PR number
+PullRequest = Struct.new(:number, :title, :state, :created_at, :url, :author, keyword_init: true)
+prs_by_number = {}
+
+commit_shas.each_with_index do |sha, index|
+  # Use GitHub API to find PRs associated with this commit
+  # The endpoint: GET /repos/{owner}/{repo}/commits/{sha}/pulls
+  api_path = "repos/#{owner}/#{repo}/commits/#{sha}/pulls"
+  json_output, status = Open3.capture2("gh api #{api_path} 2>/dev/null")
+
+  if status.success?
+    pr_data_array = JSON.parse(json_output)
+    pr_data_array.each do |pr_data|
+      pr_number = pr_data["number"]
+
+      # Only add each PR once (some PRs may contain multiple commits to the file)
+      unless prs_by_number.key?(pr_number)
+        prs_by_number[pr_number] = PullRequest.new(
+          number: pr_number,
+          title: pr_data["title"],
+          state: pr_data["state"].upcase,
+          created_at: Time.parse(pr_data["created_at"]),
+          url: pr_data["html_url"],
+          author: pr_data["user"]["login"]
+        )
+      end
+    end
+  end
+
+  # Show progress for large file histories
+  if commit_shas.count > 50 && (index + 1) % 50 == 0
+    puts "  Processed #{index + 1}/#{commit_shas.count} commits..."
+  end
+end
+
+pull_requests = prs_by_number.values
+
+if pull_requests.empty?
+  puts "\nNo pull requests found for: #{file_paths}"
+  puts "(This might mean commits were pushed directly without PRs)"
+  exit 0
+end
+
+# Sort by created_at, newest first
+pull_requests.sort_by! { |pr| -pr.created_at.to_i }
+
+# Display results
+puts "\n"
+puts "=" * 80
+puts "Pull Requests for: #{file_paths}"
+puts "=" * 80
+puts
+
+pull_requests.each do |pr|
+  # Map GitHub API state to display format
+  case pr.state
+  when "OPEN"
+    status_indicator = "🟢 OPEN  "
+  when "CLOSED"
+    status_indicator = "🔴 CLOSED"
+  when "MERGED"
+    status_indicator = "🟣 MERGED"
+  else
+    status_indicator = "⚪ #{pr.state}"
+  end
+
+  date_str = pr.created_at.strftime("%Y-%m-%d")
+
+  puts "#{status_indicator}  ##{pr.number} - #{pr.title}"
+  puts "   Author: #{pr.author} | Created: #{date_str}"
+  puts "   #{pr.url}"
+  puts
+end
+
+puts "=" * 80
+puts "Total: #{pull_requests.count} pull request(s) found"
