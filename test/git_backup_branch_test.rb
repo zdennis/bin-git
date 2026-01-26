@@ -26,6 +26,7 @@ class TestGitBackupBranch
     test_list_backups_empty
     test_help_flag
     test_missing_branch_error
+    test_missing_remote_branch_error
 
     print_summary
     exit(@tests_failed > 0 ? 1 : 0)
@@ -150,9 +151,19 @@ class TestGitBackupBranch
     with_test_repo do |dir|
       output, status = run_backup_branch("nonexistent-branch")
 
-      # Current behavior: git branch fails, script reports failure
-      # This test documents current behavior
       refute status.success?, "should fail for nonexistent branch"
+      assert output.include?("does not exist"), "should show clear error message"
+      assert output.include?("git branch -a"), "should suggest how to list branches"
+    end
+  end
+
+  def test_missing_remote_branch_error
+    with_test_repo do |dir|
+      output, status = run_backup_branch("-r", "nonexistent-branch")
+
+      refute status.success?, "should fail for nonexistent remote branch"
+      assert output.include?("does not exist"), "should show clear error message"
+      assert output.include?("git fetch"), "should suggest fetching"
     end
   end
 
