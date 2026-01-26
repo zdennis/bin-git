@@ -22,6 +22,22 @@ require_or_install 'term-ansicolor', version: '1.7.1', require_as: 'term/ansicol
 
 SCRIPT_NAME = File.basename(__FILE__)
 
+def current_branch
+  `git rev-parse --abbrev-ref HEAD`.chomp
+end
+
+def main_branch
+  # Try common main branch names in order of preference
+  %w[main master].each do |name|
+    return name if system("git show-ref --verify --quiet refs/heads/#{name}")
+  end
+  # Fall back to checking remote default branch
+  remote_head = `git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null`.chomp
+  return remote_head.sub(%r{^refs/remotes/origin/}, '') unless remote_head.empty?
+  # Default fallback
+  'main'
+end
+
 options = {
   list: false,
   remote: nil,
@@ -43,7 +59,7 @@ OptionParser.new do |opts|
   end
 
   opts.on("-h", "--help", "Prints help message") do
-    main_branch = `git get-main-branch`.chomp
+    main_branch_name = main_branch
 
     puts <<~HELP
       #{SCRIPT_NAME} is used to create or list backup branches. It will use the current branch if no branch name
@@ -64,7 +80,7 @@ OptionParser.new do |opts|
         #{SCRIPT_NAME} -r features/sign-up
 
         #{Term::ANSIColor.bold("# Backup a branch and tag it with an extra descriptor")}
-        #{SCRIPT_NAME} -t "before #{main_branch} rebase"
+        #{SCRIPT_NAME} -t "before #{main_branch_name} rebase"
 
         #{Term::ANSIColor.bold("# List all known backup branches for the current branch")}
         #{SCRIPT_NAME} -l
@@ -78,7 +94,7 @@ OptionParser.new do |opts|
   end
 end.parse!
 
-branch = ARGV.shift || `git current-branch`.chomp
+branch = ARGV.shift || current_branch
 todays_date = Date.today.to_s
 
 if branch.to_s.empty?
