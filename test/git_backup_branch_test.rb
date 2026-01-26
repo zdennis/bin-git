@@ -36,6 +36,7 @@ class TestGitBackupBranch
     test_diff_shows_commits
     test_diff_no_backups_error
     test_diff_identical_branches
+    test_list_all_backups
 
     print_summary
     exit(@tests_failed > 0 ? 1 : 0)
@@ -315,6 +316,28 @@ class TestGitBackupBranch
 
       assert status.success?, "diff should succeed"
       assert output.include?("No commits since backup"), "should indicate branches are identical"
+    end
+  end
+
+  def test_list_all_backups
+    with_test_repo do |dir|
+      # Create backups for master
+      run_backup_branch
+
+      # Create another branch and back it up
+      git("checkout -b feature-branch")
+      File.write("feature.txt", "feature content")
+      git("add feature.txt")
+      git("commit -m 'Feature commit'")
+      run_backup_branch
+      git("checkout master")
+
+      # List all should show both
+      output, status = run_backup_branch("-l", "--all")
+
+      assert status.success?, "list all should succeed"
+      assert output.include?("master.bak"), "should include master backup"
+      assert output.include?("feature-branch.bak"), "should include feature-branch backup"
     end
   end
 

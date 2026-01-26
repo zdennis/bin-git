@@ -41,6 +41,7 @@ end
 
 options = {
   list: false,
+  all: false,
   remote: nil,
   tag: nil,
   restore: false,
@@ -58,6 +59,10 @@ OptionParser.new do |opts|
 
   opts.on("-l", "--list", "Lists backup branches for current or specified branch") do
     options[:list] = true
+  end
+
+  opts.on("-a", "--all", "List all backup branches in the repository (use with --list)") do
+    options[:all] = true
   end
 
   opts.on("-r", "--remote", "Use the remote branch instead of the local branch.") do
@@ -113,6 +118,9 @@ OptionParser.new do |opts|
 
         #{Term::ANSIColor.bold("# List all known backup branches for a specific branch")}
         #{SCRIPT_NAME} -l features/sign-up
+
+        #{Term::ANSIColor.bold("# List all backup branches in the repository")}
+        #{SCRIPT_NAME} -l --all
 
         #{Term::ANSIColor.bold("# Restore current branch from most recent backup")}
         #{SCRIPT_NAME} --restore
@@ -188,8 +196,13 @@ rescue ArgumentError
 end
 
 if options.fetch(:list)
-  # Show both local and remote backup branches
-  backup_branches = `git branch -a`.lines.grep(/#{Regexp.escape(branch)}\.bak/)
+  if options[:all]
+    # Show all backup branches in the repository
+    backup_branches = `git branch -a`.lines.grep(/\.bak/)
+  else
+    # Show backup branches for the specific branch
+    backup_branches = `git branch -a`.lines.grep(/#{Regexp.escape(branch)}\.bak/)
+  end
   puts backup_branches.map { |b| b.strip.sub(/^\* /, '') }
   exit 0
 end
