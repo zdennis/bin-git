@@ -2,6 +2,7 @@
 
 require 'optparse'
 require 'date'
+require 'shellwords'
 
 def require_or_install(name, version:, require_as: name)
   require require_as
@@ -29,7 +30,7 @@ end
 def main_branch
   # Try common main branch names in order of preference
   %w[main master].each do |name|
-    return name if system("git show-ref --verify --quiet refs/heads/#{name}")
+    return name if system("git show-ref --verify --quiet refs/heads/#{Shellwords.escape(name)}")
   end
   # Fall back to checking remote default branch
   remote_head = `git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null`.chomp
@@ -107,11 +108,11 @@ end
 
 def branch_exists?(name)
   # Use git show-ref for exact matching instead of grep which can match substrings
-  system("git show-ref --verify --quiet refs/heads/#{name}")
+  system("git show-ref --verify --quiet refs/heads/#{Shellwords.escape(name)}")
 end
 
 def remote_branch_exists?(remote, branch)
-  system("git show-ref --verify --quiet refs/remotes/#{remote}/#{branch}")
+  system("git show-ref --verify --quiet refs/remotes/#{Shellwords.escape(remote)}/#{Shellwords.escape(branch)}")
 end
 
 def source_exists?(source, remote: nil)
@@ -183,7 +184,7 @@ loop do
     break
   end
 end
-command = "git branch #{backup_branch} #{source_branch}"
+command = "git branch #{Shellwords.escape(backup_branch)} #{Shellwords.escape(source_branch)}"
 puts command
 if system(command)
   puts Term::ANSIColor.green <<~SUCCESS.chomp
