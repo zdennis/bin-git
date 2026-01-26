@@ -207,6 +207,10 @@ rescue ArgumentError
   nil
 end
 
+def commit_count(branch_name)
+  `git rev-list --count #{Shellwords.escape(branch_name)} 2>/dev/null`.chomp.to_i
+end
+
 if options.fetch(:list)
   if options[:all]
     # Show all backup branches in the repository
@@ -215,7 +219,23 @@ if options.fetch(:list)
     # Show backup branches for the specific branch
     backup_branches = `git branch -a`.lines.grep(/#{Regexp.escape(branch)}\.bak/)
   end
-  puts backup_branches.map { |b| b.strip.sub(/^\* /, '') }
+
+  backup_names = backup_branches.map { |b| b.strip.sub(/^\* /, '') }
+
+  if backup_names.empty?
+    # No output needed for empty list
+  elsif $quiet
+    # In quiet mode, just output branch names
+    puts backup_names
+  else
+    # Show branch names with commit counts
+    backup_names.each do |name|
+      # Strip remote prefix for display purposes
+      display_name = name.sub(%r{^remotes/}, '')
+      count = commit_count(name)
+      puts "#{display_name} (#{count} commits)"
+    end
+  end
   exit 0
 end
 

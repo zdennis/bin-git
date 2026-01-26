@@ -39,6 +39,7 @@ class TestGitBackupBranch
     test_list_all_backups
     test_quiet_mode_backup
     test_quiet_mode_suppresses_messages
+    test_list_shows_commit_count
 
     print_summary
     exit(@tests_failed > 0 ? 1 : 0)
@@ -364,6 +365,19 @@ class TestGitBackupBranch
 
       assert status.success?, "second quiet backup should succeed"
       refute output.include?("exists"), "should not show exists message in quiet mode"
+    end
+  end
+
+  def test_list_shows_commit_count
+    with_test_repo do |dir|
+      run_backup_branch
+
+      output, status = run_backup_branch("-l")
+
+      assert status.success?, "list should succeed"
+      assert output.include?("commits"), "should show commit count"
+      # Test repo has 3 commits (initial + file1 + file2)
+      assert output.include?("3 commits"), "should show correct commit count"
     end
   end
 
