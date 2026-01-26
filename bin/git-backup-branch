@@ -22,6 +22,11 @@ end
 require_or_install 'term-ansicolor', version: '1.7.1', require_as: 'term/ansicolor'
 
 SCRIPT_NAME = File.basename(__FILE__)
+$quiet = false
+
+def info(message)
+  puts message unless $quiet
+end
 
 def current_branch
   `git rev-parse --abbrev-ref HEAD`.chomp
@@ -48,7 +53,8 @@ options = {
   force: false,
   delete: false,
   older_than: nil,
-  diff: false
+  diff: false,
+  quiet: false
 }
 OptionParser.new do |opts|
   opts.banner = "Usage: #{SCRIPT_NAME} [options] [branch-name]"
@@ -87,6 +93,10 @@ OptionParser.new do |opts|
 
   opts.on("--diff", "Show commits between current branch and a backup") do
     options[:diff] = true
+  end
+
+  opts.on("-q", "--quiet", "Suppress informational output (errors still shown)") do
+    options[:quiet] = true
   end
 
   opts.on("-h", "--help", "Prints help message") do
@@ -151,6 +161,8 @@ OptionParser.new do |opts|
     exit
   end
 end.parse!
+
+$quiet = options[:quiet]
 
 branch = ARGV.shift || current_branch
 todays_date = Date.today.to_s
@@ -226,19 +238,19 @@ if options.fetch(:delete)
     end
 
     if backups.empty?
-      puts "No backups older than #{options[:older_than]} days found for '#{branch}'."
+      info "No backups older than #{options[:older_than]} days found for '#{branch}'."
       exit 0
     end
   end
 
-  puts "The following backup(s) will be deleted:"
-  backups.each { |b| puts "  #{b}" }
+  info "The following backup(s) will be deleted:"
+  backups.each { |b| info "  #{b}" }
 
   unless options[:force]
-    print "\nAre you sure you want to delete these backups? [y/N]: "
-    confirm = STDIN.gets&.chomp&.downcase
+    print "\nAre you sure you want to delete these backups? [y/N]: " unless $quiet
+    confirm = $quiet ? 'n' : STDIN.gets&.chomp&.downcase
     unless confirm == 'y' || confirm == 'yes'
-      puts "Aborted."
+      info "Aborted."
       exit 0
     end
   end
@@ -247,7 +259,7 @@ if options.fetch(:delete)
   failed = 0
   backups.each do |backup|
     if system("git branch -D #{Shellwords.escape(backup)} > /dev/null 2>&1")
-      puts Term::ANSIColor.green("Deleted #{backup}")
+      info Term::ANSIColor.green("Deleted #{backup}")
       deleted += 1
     else
       STDERR.puts Term::ANSIColor.red("Failed to delete #{backup}")
@@ -255,7 +267,7 @@ if options.fetch(:delete)
     end
   end
 
-  puts "\nDeleted #{deleted} backup(s)#{failed > 0 ? ", #{failed} failed" : ""}."
+  info "\nDeleted #{deleted} backup(s)#{failed > 0 ? ", #{failed} failed" : ""}."
   exit(failed > 0 ? 1 : 0)
 end
 
@@ -329,7 +341,7 @@ if options.fetch(:restore)
   # Use the most recent backup (last in sorted list)
   backup_to_restore = backups.last
 
-  if backups.length > 1
+  if backups.length > 1 && !$quiet
     puts "Multiple backups found for '#{branch}':"
     backups.each_with_index do |b, i|
       puts "  #{i + 1}. #{b}"
@@ -370,9 +382,9 @@ if options.fetch(:restore)
     command = "git branch#{force_flag} #{Shellwords.escape(branch)} #{Shellwords.escape(backup_to_restore)}"
   end
 
-  puts command
+  info command
   if system(command)
-    puts Term::ANSIColor.green <<~SUCCESS.chomp
+    info Term::ANSIColor.green <<~SUCCESS.chomp
       Successfully restored '#{branch}' from '#{backup_to_restore}'
     SUCCESS
   else
@@ -423,13 +435,13 @@ loop do
   backup_branch = build_backup_name(backup_base, todays_date, count, options[:tag])
 
   if branch_exists?(backup_branch)
-    puts Term::ANSIColor.bright_black <<~MESSAGE.chomp
+    info Term::ANSIColor.bright_black <<~MESSAGE.chomp
       #{backup_branch} exists
     MESSAGE
 
     count += 1
     if count >= max_tries
-      puts Term::ANSIColor.red <<~ERROR.chomp
+      STDERR.puts Term::ANSIColor.red <<~ERROR.chomp
         Exhausted attempts to create a backup branch!
         You may need to do some cleanup.
       ERROR
@@ -440,13 +452,18 @@ loop do
   end
 end
 command = "git branch #{Shellwords.escape(backup_branch)} #{Shellwords.escape(source_branch)}"
-puts command
+info command
 if system(command)
-  puts Term::ANSIColor.green <<~SUCCESS.chomp
-    Successfully backed up to #{backup_branch}
-  SUCCESS
+  # In quiet mode, just output the backup branch name for scripting
+  if $quiet
+    puts backup_branch
+  else
+    puts Term::ANSIColor.green <<~SUCCESS.chomp
+      Successfully backed up to #{backup_branch}
+    SUCCESS
+  end
 else
-  puts Term::ANSIColor.red <<~ERROR.chomp
+  STDERR.puts Term::ANSIColor.red <<~ERROR.chomp
     Failed to backup #{source_branch} with command: #{command}
   ERROR
   exit 1

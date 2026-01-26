@@ -37,6 +37,8 @@ class TestGitBackupBranch
     test_diff_no_backups_error
     test_diff_identical_branches
     test_list_all_backups
+    test_quiet_mode_backup
+    test_quiet_mode_suppresses_messages
 
     print_summary
     exit(@tests_failed > 0 ? 1 : 0)
@@ -338,6 +340,30 @@ class TestGitBackupBranch
       assert status.success?, "list all should succeed"
       assert output.include?("master.bak"), "should include master backup"
       assert output.include?("feature-branch.bak"), "should include feature-branch backup"
+    end
+  end
+
+  def test_quiet_mode_backup
+    with_test_repo do |dir|
+      output, status = run_backup_branch("--quiet")
+
+      assert status.success?, "quiet backup should succeed"
+      # In quiet mode, should only output the backup branch name
+      assert output.strip.match?(/^master\.bak\.\d{4}-\d{2}-\d{2}$/), "should output only backup branch name"
+      refute output.include?("Successfully"), "should not include verbose messages"
+      refute output.include?("git branch"), "should not show the command"
+    end
+  end
+
+  def test_quiet_mode_suppresses_messages
+    with_test_repo do |dir|
+      # Create first backup
+      run_backup_branch("--quiet")
+      # Create second backup - should not show "exists" message in quiet mode
+      output, status = run_backup_branch("--quiet")
+
+      assert status.success?, "second quiet backup should succeed"
+      refute output.include?("exists"), "should not show exists message in quiet mode"
     end
   end
 
