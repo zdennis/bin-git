@@ -33,6 +33,9 @@ class TestGitBackupBranch
     test_delete_backups
     test_delete_no_backups
     test_delete_with_force
+    test_diff_shows_commits
+    test_diff_no_backups_error
+    test_diff_identical_branches
 
     print_summary
     exit(@tests_failed > 0 ? 1 : 0)
@@ -270,6 +273,48 @@ class TestGitBackupBranch
 
       assert status.success?, "delete with force should succeed"
       assert output.include?("Deleted"), "should show deleted message"
+    end
+  end
+
+  def test_diff_shows_commits
+    with_test_repo do |dir|
+      # Create a backup
+      run_backup_branch
+
+      # Make new commits
+      File.write("new_file.txt", "new content")
+      git("add new_file.txt")
+      git("commit -m 'Add new file'")
+
+      # Run diff
+      output, status = run_backup_branch("--diff")
+
+      assert status.success?, "diff should succeed"
+      assert output.include?("Commits since"), "should show commits header"
+      assert output.include?("Add new file"), "should show commit message"
+      assert output.include?("Summary"), "should show summary header"
+    end
+  end
+
+  def test_diff_no_backups_error
+    with_test_repo do |dir|
+      output, status = run_backup_branch("--diff")
+
+      refute status.success?, "diff should fail when no backups exist"
+      assert output.include?("No backups found"), "should show error about no backups"
+    end
+  end
+
+  def test_diff_identical_branches
+    with_test_repo do |dir|
+      # Create a backup
+      run_backup_branch
+
+      # Run diff without making changes
+      output, status = run_backup_branch("--diff")
+
+      assert status.success?, "diff should succeed"
+      assert output.include?("No commits since backup"), "should indicate branches are identical"
     end
   end
 

@@ -46,7 +46,8 @@ options = {
   restore: false,
   force: false,
   delete: false,
-  older_than: nil
+  older_than: nil,
+  diff: false
 }
 OptionParser.new do |opts|
   opts.banner = "Usage: #{SCRIPT_NAME} [options] [branch-name]"
@@ -77,6 +78,10 @@ OptionParser.new do |opts|
 
   opts.on("--older-than=DAYS", Integer, "Delete backups older than N days (use with --delete)") do |days|
     options[:older_than] = days
+  end
+
+  opts.on("--diff", "Show commits between current branch and a backup") do
+    options[:diff] = true
   end
 
   opts.on("-h", "--help", "Prints help message") do
@@ -126,6 +131,12 @@ OptionParser.new do |opts|
 
         #{Term::ANSIColor.bold("# Delete backups for a specific branch")}
         #{SCRIPT_NAME} --delete features/sign-up
+
+        #{Term::ANSIColor.bold("# Show commits since last backup")}
+        #{SCRIPT_NAME} --diff
+
+        #{Term::ANSIColor.bold("# Show diff for a specific branch")}
+        #{SCRIPT_NAME} --diff features/sign-up
     HELP
     puts
     puts opts
@@ -233,6 +244,62 @@ if options.fetch(:delete)
 
   puts "\nDeleted #{deleted} backup(s)#{failed > 0 ? ", #{failed} failed" : ""}."
   exit(failed > 0 ? 1 : 0)
+end
+
+if options.fetch(:diff)
+  backups = find_backups(branch)
+
+  if backups.empty?
+    STDERR.puts Term::ANSIColor.red <<~ERROR.chomp
+      No backups found for branch '#{branch}'.
+      Use '#{SCRIPT_NAME} -l #{branch}' to list available backups.
+    ERROR
+    exit 1
+  end
+
+  # Use the most recent backup by default
+  backup_to_diff = backups.last
+
+  if backups.length > 1
+    puts "Multiple backups found for '#{branch}':"
+    backups.each_with_index do |b, i|
+      puts "  #{i + 1}. #{b}"
+    end
+    print "\nSelect backup to compare (1-#{backups.length}) [#{backups.length}]: "
+    choice = STDIN.gets&.chomp
+    choice = backups.length.to_s if choice.nil? || choice.empty?
+
+    index = choice.to_i - 1
+    if index < 0 || index >= backups.length
+      STDERR.puts Term::ANSIColor.red("Invalid selection")
+      exit 1
+    end
+    backup_to_diff = backups[index]
+  end
+
+  # Show commits between backup and current branch
+  puts Term::ANSIColor.bold("Commits since #{backup_to_diff}:")
+  puts
+
+  commits = `git log --oneline #{Shellwords.escape(backup_to_diff)}..#{Shellwords.escape(branch)} 2>/dev/null`.chomp
+
+  if commits.empty?
+    puts Term::ANSIColor.bright_black("  No commits since backup (branches are identical)")
+  else
+    puts commits
+  end
+
+  puts
+  puts Term::ANSIColor.bold("Summary:")
+  stats = `git diff --stat #{Shellwords.escape(backup_to_diff)}..#{Shellwords.escape(branch)} 2>/dev/null`.chomp
+
+  if stats.empty?
+    puts Term::ANSIColor.bright_black("  No changes")
+  else
+    puts stats
+  end
+
+  exit 0
 end
 
 if options.fetch(:restore)
