@@ -27,6 +27,9 @@ class TestGitBackupBranch
     test_help_flag
     test_missing_branch_error
     test_missing_remote_branch_error
+    test_restore_single_backup
+    test_restore_no_backups_error
+    test_restore_with_force
 
     print_summary
     exit(@tests_failed > 0 ? 1 : 0)
@@ -164,6 +167,63 @@ class TestGitBackupBranch
       refute status.success?, "should fail for nonexistent remote branch"
       assert output.include?("does not exist"), "should show clear error message"
       assert output.include?("git fetch"), "should suggest fetching"
+    end
+  end
+
+  def test_restore_single_backup
+    with_test_repo do |dir|
+      # Create a backup
+      run_backup_branch
+
+      # Make a new commit
+      File.write("new_file.txt", "new content")
+      git("add new_file.txt")
+      git("commit -m 'New commit after backup'")
+
+      # Verify new file exists
+      assert File.exist?("new_file.txt"), "new file should exist before restore"
+
+      # Restore from backup (non-interactive since only one backup)
+      output, status = run_backup_branch("--restore")
+
+      assert status.success?, "restore should succeed"
+      assert output.include?("Successfully restored"), "should show success message"
+
+      # Verify we're back to the backup state
+      refute File.exist?("new_file.txt"), "new file should not exist after restore"
+    end
+  end
+
+  def test_restore_no_backups_error
+    with_test_repo do |dir|
+      output, status = run_backup_branch("--restore")
+
+      refute status.success?, "restore should fail when no backups exist"
+      assert output.include?("No backups found"), "should show error about no backups"
+    end
+  end
+
+  def test_restore_with_force
+    with_test_repo do |dir|
+      # Create a backup
+      run_backup_branch
+
+      # Make uncommitted changes
+      File.write("file1.txt", "modified content")
+
+      # Try restore without force (should fail)
+      output, status = run_backup_branch("--restore")
+      refute status.success?, "restore without force should fail with uncommitted changes"
+      assert output.include?("uncommitted changes"), "should mention uncommitted changes"
+
+      # Restore with force
+      output, status = run_backup_branch("--restore", "--force")
+      assert status.success?, "restore with force should succeed"
+      assert output.include?("Successfully restored"), "should show success message"
+
+      # Verify changes were discarded
+      content = File.read("file1.txt")
+      assert content == "content 1", "file should be restored to original content"
     end
   end
 

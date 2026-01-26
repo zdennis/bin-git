@@ -42,7 +42,9 @@ end
 options = {
   list: false,
   remote: nil,
-  tag: nil
+  tag: nil,
+  restore: false,
+  force: false
 }
 OptionParser.new do |opts|
   opts.banner = "Usage: #{SCRIPT_NAME} [options] [branch-name]"
@@ -57,6 +59,14 @@ OptionParser.new do |opts|
 
   opts.on("-r", "--remote", "Use the remote branch instead of the local branch.") do
     options[:remote] = "origin"
+  end
+
+  opts.on("--restore", "Restore a branch from a backup") do
+    options[:restore] = true
+  end
+
+  opts.on("-f", "--force", "Force restore even if branch has changes (use with --restore)") do
+    options[:force] = true
   end
 
   opts.on("-h", "--help", "Prints help message") do
@@ -88,6 +98,15 @@ OptionParser.new do |opts|
 
         #{Term::ANSIColor.bold("# List all known backup branches for a specific branch")}
         #{SCRIPT_NAME} -l features/sign-up
+
+        #{Term::ANSIColor.bold("# Restore current branch from most recent backup")}
+        #{SCRIPT_NAME} --restore
+
+        #{Term::ANSIColor.bold("# Restore a specific branch from its backup")}
+        #{SCRIPT_NAME} --restore features/sign-up
+
+        #{Term::ANSIColor.bold("# Force restore (overwrites uncommitted changes)")}
+        #{SCRIPT_NAME} --restore --force
     HELP
     puts
     puts opts
@@ -123,10 +142,86 @@ def source_exists?(source, remote: nil)
   end
 end
 
+def find_backups(branch)
+  `git branch`.lines
+    .map { |b| b.strip.sub(/^\* /, '') }
+    .select { |b| b.start_with?("#{branch}.bak") }
+    .sort
+end
+
 if options.fetch(:list)
   # Show both local and remote backup branches
   backup_branches = `git branch -a`.lines.grep(/#{Regexp.escape(branch)}\.bak/)
   puts backup_branches.map { |b| b.strip.sub(/^\* /, '') }
+  exit 0
+end
+
+if options.fetch(:restore)
+  backups = find_backups(branch)
+
+  if backups.empty?
+    STDERR.puts Term::ANSIColor.red <<~ERROR.chomp
+      No backups found for branch '#{branch}'.
+      Use '#{SCRIPT_NAME} -l #{branch}' to list available backups.
+    ERROR
+    exit 1
+  end
+
+  # Use the most recent backup (last in sorted list)
+  backup_to_restore = backups.last
+
+  if backups.length > 1
+    puts "Multiple backups found for '#{branch}':"
+    backups.each_with_index do |b, i|
+      puts "  #{i + 1}. #{b}"
+    end
+    print "\nSelect backup to restore (1-#{backups.length}) [#{backups.length}]: "
+    choice = STDIN.gets&.chomp
+    choice = backups.length.to_s if choice.nil? || choice.empty?
+
+    index = choice.to_i - 1
+    if index < 0 || index >= backups.length
+      STDERR.puts Term::ANSIColor.red("Invalid selection")
+      exit 1
+    end
+    backup_to_restore = backups[index]
+  end
+
+  # Check if we're on the branch we're restoring
+  on_target_branch = current_branch == branch
+
+  if on_target_branch && !options[:force]
+    # Check for uncommitted changes
+    status = `git status --porcelain`
+    unless status.empty?
+      STDERR.puts Term::ANSIColor.red <<~ERROR.chomp
+        Branch '#{branch}' has uncommitted changes.
+        Commit or stash your changes, or use --force to discard them.
+      ERROR
+      exit 1
+    end
+  end
+
+  if on_target_branch
+    # Reset current branch to the backup
+    command = "git reset --hard #{Shellwords.escape(backup_to_restore)}"
+  else
+    # Move the branch pointer to the backup
+    force_flag = options[:force] ? " -f" : ""
+    command = "git branch#{force_flag} #{Shellwords.escape(branch)} #{Shellwords.escape(backup_to_restore)}"
+  end
+
+  puts command
+  if system(command)
+    puts Term::ANSIColor.green <<~SUCCESS.chomp
+      Successfully restored '#{branch}' from '#{backup_to_restore}'
+    SUCCESS
+  else
+    STDERR.puts Term::ANSIColor.red <<~ERROR.chomp
+      Failed to restore '#{branch}' from '#{backup_to_restore}'
+    ERROR
+    exit 1
+  end
   exit 0
 end
 
