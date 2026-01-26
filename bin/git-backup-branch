@@ -124,8 +124,9 @@ def source_exists?(source, remote: nil)
 end
 
 if options.fetch(:list)
-  backup_branches = `git branch`.lines.grep(/#{Regexp.escape(branch)}.bak/)
-  puts backup_branches.map(&:strip)
+  # Show both local and remote backup branches
+  backup_branches = `git branch -a`.lines.grep(/#{Regexp.escape(branch)}\.bak/)
+  puts backup_branches.map { |b| b.strip.sub(/^\* /, '') }
   exit 0
 end
 
