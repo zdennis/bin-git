@@ -44,7 +44,9 @@ options = {
   remote: nil,
   tag: nil,
   restore: false,
-  force: false
+  force: false,
+  delete: false,
+  older_than: nil
 }
 OptionParser.new do |opts|
   opts.banner = "Usage: #{SCRIPT_NAME} [options] [branch-name]"
@@ -67,6 +69,14 @@ OptionParser.new do |opts|
 
   opts.on("-f", "--force", "Force restore even if branch has changes (use with --restore)") do
     options[:force] = true
+  end
+
+  opts.on("-d", "--delete", "Delete backup branches") do
+    options[:delete] = true
+  end
+
+  opts.on("--older-than=DAYS", Integer, "Delete backups older than N days (use with --delete)") do |days|
+    options[:older_than] = days
   end
 
   opts.on("-h", "--help", "Prints help message") do
@@ -107,6 +117,15 @@ OptionParser.new do |opts|
 
         #{Term::ANSIColor.bold("# Force restore (overwrites uncommitted changes)")}
         #{SCRIPT_NAME} --restore --force
+
+        #{Term::ANSIColor.bold("# Delete all backups for current branch")}
+        #{SCRIPT_NAME} --delete
+
+        #{Term::ANSIColor.bold("# Delete backups older than 30 days")}
+        #{SCRIPT_NAME} --delete --older-than=30
+
+        #{Term::ANSIColor.bold("# Delete backups for a specific branch")}
+        #{SCRIPT_NAME} --delete features/sign-up
     HELP
     puts
     puts opts
@@ -149,11 +168,71 @@ def find_backups(branch)
     .sort
 end
 
+def extract_date_from_backup(backup_name)
+  # Extract date in YYYY-MM-DD format from backup name
+  match = backup_name.match(/\.(\d{4}-\d{2}-\d{2})/)
+  match ? Date.parse(match[1]) : nil
+rescue ArgumentError
+  nil
+end
+
 if options.fetch(:list)
   # Show both local and remote backup branches
   backup_branches = `git branch -a`.lines.grep(/#{Regexp.escape(branch)}\.bak/)
   puts backup_branches.map { |b| b.strip.sub(/^\* /, '') }
   exit 0
+end
+
+if options.fetch(:delete)
+  backups = find_backups(branch)
+
+  if backups.empty?
+    STDERR.puts Term::ANSIColor.yellow <<~MESSAGE.chomp
+      No backups found for branch '#{branch}'.
+    MESSAGE
+    exit 0
+  end
+
+  # Filter by age if --older-than is specified
+  if options[:older_than]
+    cutoff_date = Date.today - options[:older_than]
+    backups = backups.select do |b|
+      date = extract_date_from_backup(b)
+      date && date < cutoff_date
+    end
+
+    if backups.empty?
+      puts "No backups older than #{options[:older_than]} days found for '#{branch}'."
+      exit 0
+    end
+  end
+
+  puts "The following backup(s) will be deleted:"
+  backups.each { |b| puts "  #{b}" }
+
+  unless options[:force]
+    print "\nAre you sure you want to delete these backups? [y/N]: "
+    confirm = STDIN.gets&.chomp&.downcase
+    unless confirm == 'y' || confirm == 'yes'
+      puts "Aborted."
+      exit 0
+    end
+  end
+
+  deleted = 0
+  failed = 0
+  backups.each do |backup|
+    if system("git branch -D #{Shellwords.escape(backup)} > /dev/null 2>&1")
+      puts Term::ANSIColor.green("Deleted #{backup}")
+      deleted += 1
+    else
+      STDERR.puts Term::ANSIColor.red("Failed to delete #{backup}")
+      failed += 1
+    end
+  end
+
+  puts "\nDeleted #{deleted} backup(s)#{failed > 0 ? ", #{failed} failed" : ""}."
+  exit(failed > 0 ? 1 : 0)
 end
 
 if options.fetch(:restore)

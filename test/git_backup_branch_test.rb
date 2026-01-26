@@ -30,6 +30,9 @@ class TestGitBackupBranch
     test_restore_single_backup
     test_restore_no_backups_error
     test_restore_with_force
+    test_delete_backups
+    test_delete_no_backups
+    test_delete_with_force
 
     print_summary
     exit(@tests_failed > 0 ? 1 : 0)
@@ -224,6 +227,49 @@ class TestGitBackupBranch
       # Verify changes were discarded
       content = File.read("file1.txt")
       assert content == "content 1", "file should be restored to original content"
+    end
+  end
+
+  def test_delete_backups
+    with_test_repo do |dir|
+      # Create multiple backups
+      run_backup_branch("-t", "first")
+      run_backup_branch("-t", "second")
+
+      # Verify backups exist
+      output, _ = run_backup_branch("-l")
+      assert output.lines.length >= 2, "should have multiple backups"
+
+      # Delete with force (skip confirmation)
+      output, status = run_backup_branch("--delete", "--force")
+
+      assert status.success?, "delete should succeed"
+      assert output.include?("Deleted"), "should show deleted message"
+
+      # Verify backups are gone
+      output, _ = run_backup_branch("-l")
+      assert output.strip.empty?, "backups should be deleted"
+    end
+  end
+
+  def test_delete_no_backups
+    with_test_repo do |dir|
+      output, status = run_backup_branch("--delete")
+
+      assert status.success?, "delete with no backups should succeed"
+      assert output.include?("No backups found"), "should mention no backups"
+    end
+  end
+
+  def test_delete_with_force
+    with_test_repo do |dir|
+      run_backup_branch
+
+      # Delete with force should not prompt
+      output, status = run_backup_branch("--delete", "--force")
+
+      assert status.success?, "delete with force should succeed"
+      assert output.include?("Deleted"), "should show deleted message"
     end
   end
 
