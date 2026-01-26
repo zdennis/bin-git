@@ -21,6 +21,7 @@ class TestGitBackupBranch
     test_backup_specific_branch
     test_backup_with_tag
     test_backup_handles_existing_backup
+    test_backup_no_false_collision_with_similar_names
     test_list_backups
     test_list_backups_empty
     test_help_flag
@@ -86,6 +87,30 @@ class TestGitBackupBranch
       branches = git("branch").lines.map(&:strip)
       backups = branches.select { |b| b.include?("master.bak") }
       assert backups.length >= 2, "should have multiple backups"
+    end
+  end
+
+  def test_backup_no_false_collision_with_similar_names
+    with_test_repo do |dir|
+      # Create a branch with a similar name that could be matched by substring
+      git("checkout -b my-feature")
+      git("checkout master")
+
+      # Backup my-feature
+      run_backup_branch("my-feature")
+
+      # Now create 'feature' branch and back it up
+      git("checkout -b feature")
+      git("checkout master")
+      output, status = run_backup_branch("feature")
+
+      # Should succeed without false collision detection
+      assert status.success?, "backup should succeed without false collision"
+      refute output.include?("exists"), "should not detect false collision from similar branch name"
+
+      branches = git("branch").lines.map(&:strip)
+      feature_backup = branches.find { |b| b.match?(/^feature\.bak\.\d{4}-\d{2}-\d{2}$/) }
+      assert feature_backup, "feature backup should exist with correct name"
     end
   end
 

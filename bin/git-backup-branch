@@ -90,7 +90,8 @@ if branch.to_s.empty?
 end
 
 def branch_exists?(name)
-  `git branch -a`.lines.grep(/#{Regexp.escape(name)}/).any?
+  # Use git show-ref for exact matching instead of grep which can match substrings
+  system("git show-ref --verify --quiet refs/heads/#{name}")
 end
 
 if options.fetch(:list)
@@ -100,22 +101,33 @@ if options.fetch(:list)
 end
 
 if options[:remote]
-  backup_branch = "#{branch}.bak.remote"
-  branch = "#{options[:remote]}/#{branch}"
+  backup_base = "#{branch}.bak.remote"
+  source_branch = "#{options[:remote]}/#{branch}"
 else
-  backup_branch = "#{branch}.bak"
+  backup_base = "#{branch}.bak"
+  source_branch = branch
+end
+
+# Build the full backup name with date and optional tag
+def build_backup_name(base, date, count, tag)
+  name = count > 0 ? "#{base}.bak#{count}" : base
+  name += ".#{date}"
+  name += tag if tag
+  name
 end
 
 count = 0
 max_tries = 50
-backup_branch_was = backup_branch.dup
+backup_branch = nil
 loop do
+  backup_branch = build_backup_name(backup_base, todays_date, count, options[:tag])
+
   if branch_exists?(backup_branch)
     puts Term::ANSIColor.bright_black <<~MESSAGE.chomp
       #{backup_branch} exists
     MESSAGE
 
-    backup_branch = "#{backup_branch_was}.bak#{count+=1}"
+    count += 1
     if count >= max_tries
       puts Term::ANSIColor.red <<~ERROR.chomp
         Exhausted attempts to create a backup branch!
@@ -127,18 +139,15 @@ loop do
     break
   end
 end
-
-backup_branch += ".#{todays_date}"
-backup_branch_with_tag = [backup_branch, options.fetch(:tag)].compact.join
-command = "git branch #{backup_branch_with_tag} #{branch}"
+command = "git branch #{backup_branch} #{source_branch}"
 puts command
 if system(command)
   puts Term::ANSIColor.green <<~SUCCESS.chomp
-    Successfully backed up to #{backup_branch_with_tag}
+    Successfully backed up to #{backup_branch}
   SUCCESS
 else
   puts Term::ANSIColor.red <<~ERROR.chomp
-    Failed to backup #{branch} with command: #{command}
+    Failed to backup #{source_branch} with command: #{command}
   ERROR
   exit 1
 end
