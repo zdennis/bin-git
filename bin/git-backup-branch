@@ -442,7 +442,7 @@ end
 
 # Build the full backup name with date and optional tag
 def build_backup_name(base, date, count, tag)
-  name = count > 0 ? "#{base}.bak#{count}" : base
+  name = count > 0 ? "#{base}#{count + 1}" : base
   name += ".#{date}"
   name += tag if tag
   name

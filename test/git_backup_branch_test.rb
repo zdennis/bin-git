@@ -101,6 +101,12 @@ class TestGitBackupBranch
       branches = git("branch").lines.map(&:strip)
       backups = branches.select { |b| b.include?("master.bak") }
       assert backups.length >= 2, "should have multiple backups"
+
+      # Verify naming format is correct (no duplicate .bak)
+      first_backup = backups.find { |b| b.match?(/^master\.bak\.\d{4}-\d{2}-\d{2}$/) }
+      second_backup = backups.find { |b| b.match?(/^master\.bak2\.\d{4}-\d{2}-\d{2}$/) }
+      assert first_backup, "first backup should be named master.bak.YYYY-MM-DD"
+      assert second_backup, "second backup should be named master.bak2.YYYY-MM-DD (not master.bak.bak2)"
     end
   end
 
