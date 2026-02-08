@@ -109,10 +109,12 @@ options[:git_args] = case ARGV.first
     "#{main_branch}...HEAD"
   when /^HEAD~\d+/i
     ARGV.first
-  when /\d+/i
-    "HEAD~#{ARGV.first}"
   when /\.\./
+    # SHA ranges like abc123...def456 - must check before /\d+/ pattern
     ARGV.first
+  when /^\d+$/
+    # Pure numeric argument (e.g., "3") becomes HEAD~3
+    "HEAD~#{ARGV.first}"
   else
     ARGV.join(' ')
   end

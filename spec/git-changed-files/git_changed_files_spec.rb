@@ -89,9 +89,7 @@ RSpec.describe "git-changed-files" do
       end
     end
 
-    # Note: SHA ranges with digits have a bug - the /\d+/ pattern matches before /\.\./
-    # Skip this test until the script is fixed
-    it "accepts commit range as argument", skip: "Script has bug with SHA ranges containing digits" do
+    it "accepts commit range as argument" do
       with_test_repo do |repo|
         create_commit(repo, message: "First", files: { "first.txt" => "1" })
         sha1 = head_sha(repo)
