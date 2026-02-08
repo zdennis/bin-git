@@ -26,7 +26,10 @@ require 'term/ansicolor'
 include Term::ANSIColor
 
 def main_branch
-  @main_branch ||= `git get-main-branch`.chomp
+  @main_branch ||= begin
+    branch = `git get-main-branch 2>/dev/null`.chomp
+    branch.empty? ? "main" : branch
+  end
 end
 
 options = {
