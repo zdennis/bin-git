@@ -40,13 +40,19 @@ RSpec.describe "git-recent" do
   describe "listing recent branches" do
     it "lists branches sorted by recent activity" do
       with_test_repo do |repo|
-        # Create branches with commits to ensure different commit times
+        # Create branches with explicit commit dates to guarantee order
+        # Use dates in the future to ensure they're more recent than the initial commit
         create_branch(repo, "feature-a")
-        create_commit(repo, message: "Commit on feature-a", files: { "a.txt" => "a" })
+        run_command(
+          "GIT_COMMITTER_DATE='2099-01-01 12:00:00' git commit --allow-empty -m 'Commit on feature-a'",
+          chdir: repo
+        )
         checkout_branch(repo, "main")
-        sleep 0.5  # Ensure different commit times
         create_branch(repo, "feature-b")
-        create_commit(repo, message: "Commit on feature-b", files: { "b.txt" => "b" })
+        run_command(
+          "GIT_COMMITTER_DATE='2099-01-02 12:00:00' git commit --allow-empty -m 'Commit on feature-b'",
+          chdir: repo
+        )
 
         stdout, _, status = run_bin("git-recent", chdir: repo)
 
