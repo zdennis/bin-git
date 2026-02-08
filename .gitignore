@@ -2,6 +2,9 @@
 bin/git-restore-deleted
 go-commands/git-restore-deleted
 
+# RSpec example status persistence (generated)
+spec/examples.txt
+
 # Claude Code
 .claude/settings.local.json
 .claude/projects/
