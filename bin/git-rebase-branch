@@ -30,7 +30,7 @@ def main_branch
 end
 
 options = {
-  base: main_branch,
+  base: nil,  # Defer main_branch lookup until needed
   interactive: false
 }
 OptionParser.new do |opts|
@@ -69,7 +69,7 @@ OptionParser.new do |opts|
   end
 end.parse!
 
-options[:base] = ARGV.first if ARGV.first
+options[:base] = ARGV.first || main_branch
 
 first_commit_that_diverges = `git log #{options[:base]}..HEAD --format="%h" | tail -n1`.strip
 

@@ -38,7 +38,8 @@ OptionParser.new do |opts|
   end
 
   opts.on("-h", "--help", "Prints help message") do
-    main_branch_name = `git get-main-branch`.chomp
+    main_branch_name = `git get-main-branch 2>/dev/null`.chomp
+    main_branch_name = "main" if main_branch_name.empty?
 
     puts <<~HELP
       #{SCRIPT_NAME} - Display changed filenames for a range of commits

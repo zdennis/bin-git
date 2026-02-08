@@ -349,16 +349,18 @@ end
 
 
 unmerged = GitUnmerged.new ARGV
-UPSTREAM = unmerged.upstream
-if unmerged.show_help?
-  unmerged.print_help
-  exit
-elsif unmerged.show_version?
+
+# Handle --version and --help before initializing UPSTREAM (which requires a git repo)
+if unmerged.show_version?
   unmerged.print_version
   exit
-else
-  unmerged.print_overview
-  puts
-  unmerged.print_specifics
-  unmerged.prune
+elsif unmerged.show_help?
+  unmerged.print_help
+  exit
 end
+
+UPSTREAM = unmerged.upstream
+unmerged.print_overview
+puts
+unmerged.print_specifics
+unmerged.prune
