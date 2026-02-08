@@ -47,7 +47,7 @@ RSpec.describe "git-open-files" do
 
   describe "error handling" do
     it "fails when no pattern is provided" do
-      stdout, stderr, status = run_bin("git-open-files")
+      _stdout, stderr, status = run_bin("git-open-files")
 
       expect(status).not_to eq(0)
       expect(stderr).to include("Error")

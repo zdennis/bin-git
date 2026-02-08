@@ -47,7 +47,7 @@ RSpec.describe "git-author-stats" do
 
   describe "error handling" do
     it "fails when no path is provided" do
-      stdout, stderr, status = run_bin("git-author-stats")
+      _stdout, stderr, status = run_bin("git-author-stats")
 
       expect(status).not_to eq(0)
       expect(stderr).to include("Error")

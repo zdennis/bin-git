@@ -13,7 +13,7 @@ RSpec.describe "git-current-branch" do
     end
 
     it "accepts -v as shorthand" do
-      stdout, stderr, status = run_bin("git-current-branch", "-v")
+      stdout, _stderr, status = run_bin("git-current-branch", "-v")
 
       expect(status).to eq(0)
       expect(stdout).to match(/version/)
@@ -32,7 +32,7 @@ RSpec.describe "git-current-branch" do
     end
 
     it "accepts -h as shorthand" do
-      stdout, stderr, status = run_bin("git-current-branch", "-h")
+      stdout, _stderr, status = run_bin("git-current-branch", "-h")
 
       expect(status).to eq(0)
       expect(stdout).to include("Usage:")

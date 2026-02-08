@@ -47,7 +47,7 @@ RSpec.describe "git-reword-sha" do
 
   describe "error handling" do
     it "fails when no SHA is provided" do
-      stdout, stderr, status = run_bin("git-reword-sha")
+      _stdout, stderr, status = run_bin("git-reword-sha")
 
       expect(status).not_to eq(0)
       expect(stderr).to include("Error")

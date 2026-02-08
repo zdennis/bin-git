@@ -91,7 +91,7 @@ RSpec.describe "git-get-main-branch" do
         run_command("git commit -m 'Initial commit'", chdir: repo_path)
         run_command("git branch -m develop", chdir: repo_path)
 
-        stdout, stderr, status = run_bin("git-get-main-branch", chdir: repo_path)
+        _stdout, stderr, status = run_bin("git-get-main-branch", chdir: repo_path)
 
         expect(status).to eq(1)
         expect(stderr).to include("Error")
@@ -102,7 +102,7 @@ RSpec.describe "git-get-main-branch" do
 
     it "fails when not in a git repository" do
       Dir.mktmpdir("not-a-repo-") do |tmpdir|
-        stdout, stderr, status = run_bin("git-get-main-branch", chdir: tmpdir)
+        _stdout, _stderr, status = run_bin("git-get-main-branch", chdir: tmpdir)
 
         expect(status).not_to eq(0)
       end

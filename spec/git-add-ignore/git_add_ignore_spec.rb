@@ -54,7 +54,7 @@ RSpec.describe "git-add-ignore" do
 
   describe "error handling" do
     it "fails when no language is provided" do
-      stdout, stderr, status = run_bin("git-add-ignore")
+      _stdout, stderr, status = run_bin("git-add-ignore")
 
       expect(status).not_to eq(0)
       expect(stderr).to include("Error")

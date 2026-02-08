@@ -95,7 +95,7 @@ RSpec.describe "git-remote-branch" do
     it "returns empty when no remote tracking branch exists" do
       with_test_repo do |repo|
         # Local repo with no remote
-        stdout, _, status = run_bin("git-remote-branch", chdir: repo)
+        stdout, _, _status = run_bin("git-remote-branch", chdir: repo)
 
         # Should succeed but return empty (no remote branches)
         expect(stdout.strip).to be_empty

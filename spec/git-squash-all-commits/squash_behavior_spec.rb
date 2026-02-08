@@ -13,10 +13,10 @@ RSpec.describe "git-squash-all-commits" do
         create_commit(repo, message: "Feature commit 3", files: { "f3.txt" => "3" })
 
         # Count commits before squash (should be 4: initial + 3 feature)
-        count_before, _, _ = run_command("git rev-list --count HEAD", chdir: repo)
+        _count_before, _, _ = run_command("git rev-list --count HEAD", chdir: repo)
 
         # Squash with a message
-        stdout, stderr, status = run_bin("git-squash-all-commits", "Combined feature", chdir: repo)
+        stdout, _stderr, status = run_bin("git-squash-all-commits", "Combined feature", chdir: repo)
 
         expect(status).to eq(0)
         expect(stdout).to include("Squashing")
@@ -64,7 +64,7 @@ RSpec.describe "git-squash-all-commits" do
   describe "error handling" do
     it "fails when not in a git repository" do
       Dir.mktmpdir("not-a-repo-") do |tmpdir|
-        stdout, stderr, status = run_bin("git-squash-all-commits", chdir: tmpdir)
+        _stdout, _stderr, status = run_bin("git-squash-all-commits", chdir: tmpdir)
 
         expect(status).not_to eq(0)
       end

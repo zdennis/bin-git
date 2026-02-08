@@ -15,7 +15,7 @@ RSpec.describe "git-fixup" do
         run_command("git add file.txt", chdir: repo)
 
         # Create fixup commit
-        stdout, stderr, status = run_bin("git-fixup", target_sha, chdir: repo)
+        _stdout, _stderr, status = run_bin("git-fixup", target_sha, chdir: repo)
 
         expect(status).to eq(0)
 
@@ -34,7 +34,7 @@ RSpec.describe "git-fixup" do
         File.write(File.join(repo, "a.txt"), "updated")
         run_command("git add a.txt", chdir: repo)
 
-        stdout, stderr, status = run_bin("git-fixup", full_sha, chdir: repo)
+        _stdout, _stderr, status = run_bin("git-fixup", full_sha, chdir: repo)
 
         expect(status).to eq(0)
 
@@ -51,7 +51,7 @@ RSpec.describe "git-fixup" do
         File.write(File.join(repo, "b.txt"), "updated")
         run_command("git add b.txt", chdir: repo)
 
-        stdout, stderr, status = run_bin("git-fixup", short_sha, chdir: repo)
+        _stdout, _stderr, status = run_bin("git-fixup", short_sha, chdir: repo)
 
         expect(status).to eq(0)
 
@@ -64,7 +64,7 @@ RSpec.describe "git-fixup" do
   describe "argument validation" do
     it "requires a SHA argument" do
       with_test_repo do |repo|
-        stdout, stderr, status = run_bin("git-fixup", chdir: repo)
+        _stdout, stderr, status = run_bin("git-fixup", chdir: repo)
 
         expect(status).not_to eq(0)
         expect(stderr).to include("Error")
@@ -74,7 +74,7 @@ RSpec.describe "git-fixup" do
 
     it "validates that the SHA exists" do
       with_test_repo do |repo|
-        stdout, stderr, status = run_bin("git-fixup", "nonexistent123", chdir: repo)
+        _stdout, stderr, status = run_bin("git-fixup", "nonexistent123", chdir: repo)
 
         expect(status).not_to eq(0)
         expect(stderr).to include("Error")
@@ -90,7 +90,7 @@ RSpec.describe "git-fixup" do
         sha = head_sha(repo, short: true)
 
         # No staged changes
-        stdout, stderr, status = run_bin("git-fixup", sha, chdir: repo)
+        _stdout, _stderr, status = run_bin("git-fixup", sha, chdir: repo)
 
         # Git commit will fail with nothing to commit
         expect(status).not_to eq(0)

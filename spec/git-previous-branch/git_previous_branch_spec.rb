@@ -85,7 +85,7 @@ RSpec.describe "git-previous-branch" do
       with_test_repo do |repo|
         # Fresh repo with no branch switches
         # The initial commit doesn't create a checkout entry
-        stdout, stderr, status = run_bin("git-previous-branch", chdir: repo)
+        _stdout, stderr, status = run_bin("git-previous-branch", chdir: repo)
 
         expect(status).not_to eq(0)
         expect(stderr).to include("Error")

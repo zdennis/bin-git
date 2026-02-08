@@ -8,7 +8,7 @@ RSpec.describe "git-backup-branch" do
       with_test_repo do |repo|
         create_commit(repo, message: "Test commit", files: { "file.txt" => "content" })
 
-        stdout, stderr, status = run_bin("git-backup-branch", chdir: repo)
+        stdout, _stderr, status = run_bin("git-backup-branch", chdir: repo)
 
         expect(status).to eq(0)
         expect(stdout).to include("Successfully backed up")
@@ -37,7 +37,7 @@ RSpec.describe "git-backup-branch" do
 
     it "adds a tag to the backup name with -t option" do
       with_test_repo do |repo|
-        stdout, _, status = run_bin("git-backup-branch", "-t", "before-rebase", chdir: repo)
+        _stdout, _, status = run_bin("git-backup-branch", "-t", "before-rebase", chdir: repo)
 
         expect(status).to eq(0)
 
@@ -48,7 +48,7 @@ RSpec.describe "git-backup-branch" do
 
     it "normalizes tag names (lowercase, dashes for spaces)" do
       with_test_repo do |repo|
-        stdout, _, status = run_bin("git-backup-branch", "-t", "Before Main Rebase", chdir: repo)
+        _stdout, _, status = run_bin("git-backup-branch", "-t", "Before Main Rebase", chdir: repo)
 
         expect(status).to eq(0)
 
@@ -62,7 +62,7 @@ RSpec.describe "git-backup-branch" do
         # Create first backup
         run_bin("git-backup-branch", chdir: repo)
         # Create second backup
-        stdout, _, status = run_bin("git-backup-branch", chdir: repo)
+        _stdout, _, status = run_bin("git-backup-branch", chdir: repo)
 
         expect(status).to eq(0)
 
@@ -85,7 +85,7 @@ RSpec.describe "git-backup-branch" do
 
     it "fails when branch does not exist" do
       with_test_repo do |repo|
-        stdout, stderr, status = run_bin("git-backup-branch", "nonexistent-branch", chdir: repo)
+        _stdout, stderr, status = run_bin("git-backup-branch", "nonexistent-branch", chdir: repo)
 
         expect(status).not_to eq(0)
         expect(stderr).to include("does not exist")

@@ -19,7 +19,7 @@ RSpec.describe "git-rebase-sha" do
         initial_count, _, _ = run_command("git rev-list --count HEAD", chdir: repo)
 
         # Run rebase-sha to autosquash
-        stdout, stderr, status = run_bin("git-rebase-sha", target_sha, chdir: repo)
+        stdout, _stderr, status = run_bin("git-rebase-sha", target_sha, chdir: repo)
 
         expect(status).to eq(0)
         expect(stdout).to include("Done!")
@@ -36,7 +36,7 @@ RSpec.describe "git-rebase-sha" do
         full_sha = head_sha(repo, short: false)
         create_commit(repo, message: "After", files: { "file2.txt" => "content" })
 
-        stdout, stderr, status = run_bin("git-rebase-sha", full_sha, chdir: repo)
+        _stdout, _stderr, status = run_bin("git-rebase-sha", full_sha, chdir: repo)
 
         expect(status).to eq(0)
       end
@@ -48,7 +48,7 @@ RSpec.describe "git-rebase-sha" do
         short_sha = head_sha(repo, short: true)
         create_commit(repo, message: "After", files: { "file2.txt" => "content" })
 
-        stdout, stderr, status = run_bin("git-rebase-sha", short_sha, chdir: repo)
+        _stdout, _stderr, status = run_bin("git-rebase-sha", short_sha, chdir: repo)
 
         expect(status).to eq(0)
       end
@@ -58,7 +58,7 @@ RSpec.describe "git-rebase-sha" do
   describe "argument validation" do
     it "requires a SHA argument" do
       with_test_repo do |repo|
-        stdout, stderr, status = run_bin("git-rebase-sha", chdir: repo)
+        _stdout, stderr, status = run_bin("git-rebase-sha", chdir: repo)
 
         expect(status).not_to eq(0)
         expect(stderr).to include("SHA")
@@ -67,7 +67,7 @@ RSpec.describe "git-rebase-sha" do
 
     it "validates that the SHA exists" do
       with_test_repo do |repo|
-        stdout, stderr, status = run_bin("git-rebase-sha", "nonexistent123", chdir: repo)
+        _stdout, stderr, status = run_bin("git-rebase-sha", "nonexistent123", chdir: repo)
 
         expect(status).not_to eq(0)
         expect(stderr).to include("Invalid")

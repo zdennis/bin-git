@@ -47,7 +47,7 @@ RSpec.describe "git-whatadded" do
 
   describe "error handling" do
     it "fails when no file is provided" do
-      stdout, stderr, status = run_bin("git-whatadded")
+      _stdout, stderr, status = run_bin("git-whatadded")
 
       expect(status).not_to eq(0)
       expect(stderr).to include("Error")

@@ -45,7 +45,7 @@ RSpec.describe "git-pushf" do
         run_command("git commit --amend -C HEAD", chdir: repo)
 
         # Force push with lease should succeed
-        stdout, stderr, status = run_bin("git-pushf", chdir: repo)
+        _stdout, _stderr, status = run_bin("git-pushf", chdir: repo)
 
         expect(status).to eq(0)
       end
@@ -65,7 +65,7 @@ RSpec.describe "git-pushf" do
     it "fails gracefully when no remote is configured" do
       with_test_repo do |repo|
         # This repo has no remote configured
-        stdout, stderr, status = run_bin("git-pushf", chdir: repo)
+        _stdout, _stderr, status = run_bin("git-pushf", chdir: repo)
 
         # Git will error about no remote
         expect(status).not_to eq(0)

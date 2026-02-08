@@ -10,7 +10,7 @@ RSpec.describe "git-backup-branch" do
         run_bin("git-backup-branch", chdir: repo)
         run_bin("git-backup-branch", "-t", "tagged", chdir: repo)
 
-        stdout, stderr, status = run_bin("git-backup-branch", "-l", chdir: repo)
+        stdout, _stderr, status = run_bin("git-backup-branch", "-l", chdir: repo)
 
         expect(status).to eq(0)
         expect(stdout).to match(/main\.bak\.\d{4}/)

@@ -123,7 +123,7 @@ RSpec.describe "git-review" do
   describe "error handling" do
     it "fails when no remote branch exists" do
       with_test_repo do |repo|
-        stdout, stderr, status = run_bin("git-review", chdir: repo)
+        _stdout, stderr, status = run_bin("git-review", chdir: repo)
 
         expect(status).not_to eq(0)
         expect(stderr).to include("Error")

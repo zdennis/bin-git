@@ -64,7 +64,7 @@ RSpec.describe "git-del" do
         FileUtils.rm(File.join(repo, "to_delete.txt"))
 
         # Run git-del to stage the deletion
-        stdout, _, status = run_bin("git-del", chdir: repo)
+        _stdout, _, status = run_bin("git-del", chdir: repo)
 
         expect(status).to eq(0)
 
@@ -87,7 +87,7 @@ RSpec.describe "git-del" do
         FileUtils.rm(File.join(repo, "file1.txt"))
         FileUtils.rm(File.join(repo, "file3.txt"))
 
-        stdout, _, status = run_bin("git-del", chdir: repo)
+        _stdout, _, status = run_bin("git-del", chdir: repo)
 
         expect(status).to eq(0)
 

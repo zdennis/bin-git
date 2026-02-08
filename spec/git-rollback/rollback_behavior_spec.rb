@@ -11,7 +11,7 @@ RSpec.describe "git-rollback" do
         original_sha = head_sha(repo)
 
         # Roll back
-        stdout, stderr, status = run_bin("git-rollback", "1", chdir: repo)
+        stdout, _stderr, status = run_bin("git-rollback", "1", chdir: repo)
 
         expect(status).to eq(0)
         expect(stdout).to include("Rolled back")
@@ -35,7 +35,7 @@ RSpec.describe "git-rollback" do
         create_commit(repo, message: "Third", files: { "file3.txt" => "3" })
 
         # Roll back 2 commits
-        stdout, _, status = run_bin("git-rollback", "2", chdir: repo)
+        _stdout, _, status = run_bin("git-rollback", "2", chdir: repo)
 
         expect(status).to eq(0)
 
@@ -65,7 +65,7 @@ RSpec.describe "git-rollback" do
   describe "argument validation" do
     it "requires a number argument" do
       with_test_repo do |repo|
-        stdout, stderr, status = run_bin("git-rollback", chdir: repo)
+        _stdout, stderr, status = run_bin("git-rollback", chdir: repo)
 
         expect(status).not_to eq(0)
         expect(stderr).to include("must specify")
@@ -74,7 +74,7 @@ RSpec.describe "git-rollback" do
 
     it "rejects non-numeric arguments" do
       with_test_repo do |repo|
-        stdout, stderr, status = run_bin("git-rollback", "abc", chdir: repo)
+        _stdout, stderr, status = run_bin("git-rollback", "abc", chdir: repo)
 
         expect(status).not_to eq(0)
         expect(stderr).to include("positive integer")
@@ -83,7 +83,7 @@ RSpec.describe "git-rollback" do
 
     it "rejects zero" do
       with_test_repo do |repo|
-        stdout, stderr, status = run_bin("git-rollback", "0", chdir: repo)
+        _stdout, stderr, status = run_bin("git-rollback", "0", chdir: repo)
 
         expect(status).not_to eq(0)
         expect(stderr).to include("greater than 0")
@@ -92,7 +92,7 @@ RSpec.describe "git-rollback" do
 
     it "rejects negative numbers" do
       with_test_repo do |repo|
-        stdout, stderr, status = run_bin("git-rollback", "-1", chdir: repo)
+        _stdout, _stderr, status = run_bin("git-rollback", "-1", chdir: repo)
 
         # -1 looks like a flag to the case statement, but isn't recognized
         # It should fail (not perform any rollback)

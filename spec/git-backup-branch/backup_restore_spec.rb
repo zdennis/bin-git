@@ -54,7 +54,7 @@ RSpec.describe "git-backup-branch" do
         File.write(File.join(repo, "dirty.txt"), "uncommitted")
         run_command("git add dirty.txt", chdir: repo)
 
-        stdout, stderr, status = run_bin("git-backup-branch", "--restore", chdir: repo)
+        _stdout, stderr, status = run_bin("git-backup-branch", "--restore", chdir: repo)
 
         expect(status).not_to eq(0)
         expect(stderr).to include("uncommitted changes")
@@ -71,7 +71,7 @@ RSpec.describe "git-backup-branch" do
         File.write(File.join(repo, "dirty.txt"), "uncommitted")
         run_command("git add dirty.txt", chdir: repo)
 
-        stdout, _, status = run_bin("git-backup-branch", "--restore", "--force", chdir: repo)
+        _stdout, _, status = run_bin("git-backup-branch", "--restore", "--force", chdir: repo)
 
         expect(status).to eq(0)
         expect(head_sha(repo)).to eq(original_sha)
@@ -80,7 +80,7 @@ RSpec.describe "git-backup-branch" do
 
     it "fails when no backups exist" do
       with_test_repo do |repo|
-        stdout, stderr, status = run_bin("git-backup-branch", "--restore", chdir: repo)
+        _stdout, stderr, status = run_bin("git-backup-branch", "--restore", chdir: repo)
 
         expect(status).not_to eq(0)
         expect(stderr).to include("No backups found")

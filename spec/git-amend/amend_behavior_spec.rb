@@ -15,7 +15,7 @@ RSpec.describe "git-amend" do
         run_command("git add file2.txt", chdir: repo)
 
         # Amend
-        stdout, stderr, status = run_bin("git-amend", chdir: repo)
+        _stdout, _stderr, _status = run_bin("git-amend", chdir: repo)
 
         # The SHA should change (commit was amended)
         new_sha = head_sha(repo)
@@ -57,7 +57,7 @@ RSpec.describe "git-amend" do
         File.write(File.join(repo, "tracked.txt"), "v2")
 
         # Amend with -a to auto-stage tracked files
-        stdout, stderr, status = run_bin("git-amend", "-a", chdir: repo)
+        _stdout, _stderr, _status = run_bin("git-amend", "-a", chdir: repo)
 
         # The change should be included
         content_stdout, _, _ = run_command("git show HEAD:tracked.txt", chdir: repo)
@@ -68,7 +68,7 @@ RSpec.describe "git-amend" do
     it "fails when there is nothing to amend and no staged changes" do
       with_test_repo do |repo|
         # Just the initial commit, nothing to amend
-        stdout, stderr, status = run_bin("git-amend", chdir: repo)
+        _stdout, _stderr, status = run_bin("git-amend", chdir: repo)
 
         # Git will report nothing to commit (depending on git version)
         # The exit status may vary, but it shouldn't crash

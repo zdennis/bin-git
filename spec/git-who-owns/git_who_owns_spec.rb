@@ -47,7 +47,7 @@ RSpec.describe "git-who-owns" do
 
   describe "error handling" do
     it "fails when no file is provided" do
-      stdout, stderr, status = run_bin("git-who-owns")
+      _stdout, stderr, status = run_bin("git-who-owns")
 
       expect(status).not_to eq(0)
       expect(stderr).to include("Error")

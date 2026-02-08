@@ -75,7 +75,7 @@ RSpec.describe "git-names" do
         create_commit(repo, message: "Commit 1", files: { "file1.rb" => "1" })
         create_commit(repo, message: "Commit 2", files: { "file2.rb" => "2" })
 
-        stdout, _, status = run_bin("git-names", "HEAD~1", chdir: repo)
+        _stdout, _, status = run_bin("git-names", "HEAD~1", chdir: repo)
 
         expect(status).to eq(0)
       end

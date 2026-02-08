@@ -63,7 +63,7 @@ RSpec.describe "git-current-branch" do
   describe "error handling" do
     it "reports error when not in a git repository" do
       Dir.mktmpdir("not-a-repo-") do |tmpdir|
-        stdout, stderr, status = run_bin("git-current-branch", chdir: tmpdir)
+        _stdout, stderr, status = run_bin("git-current-branch", chdir: tmpdir)
 
         expect(status).not_to eq(0)
         expect(stderr).to include("Error")

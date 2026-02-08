@@ -61,13 +61,13 @@ RSpec.describe "git-dangling-commits" do
         # Create commits and then hard reset to lose them
         create_commit(repo, message: "Lost commit 1", files: { "lost1.txt" => "lost" })
         create_commit(repo, message: "Lost commit 2", files: { "lost2.txt" => "lost" })
-        lost_sha = head_sha(repo)
+        _lost_sha = head_sha(repo)
 
         # Reset back to first commit
         run_command("git reset --hard HEAD~2", chdir: repo)
 
         # The commits are now dangling
-        stdout, _, status = run_bin("git-dangling-commits", chdir: repo)
+        _stdout, _, status = run_bin("git-dangling-commits", chdir: repo)
 
         # May or may not find them depending on GC
         expect(status).to eq(0)
@@ -82,7 +82,7 @@ RSpec.describe "git-dangling-commits" do
         subdir = File.join(repo, "subdir")
         FileUtils.mkdir_p(subdir)
 
-        stdout, stderr, status = run_bin("git-dangling-commits", chdir: subdir)
+        _stdout, stderr, status = run_bin("git-dangling-commits", chdir: subdir)
 
         expect(status).not_to eq(0)
         expect(stderr).to include("root")
@@ -91,7 +91,7 @@ RSpec.describe "git-dangling-commits" do
 
     it "fails when not in a git repository" do
       Dir.mktmpdir("not-a-repo-") do |tmpdir|
-        stdout, stderr, status = run_bin("git-dangling-commits", chdir: tmpdir)
+        _stdout, _stderr, status = run_bin("git-dangling-commits", chdir: tmpdir)
 
         expect(status).not_to eq(0)
       end

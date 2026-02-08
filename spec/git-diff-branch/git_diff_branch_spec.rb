@@ -52,7 +52,7 @@ RSpec.describe "git-diff-branch" do
         create_commit(repo, message: "Feature commit", files: { "f.txt" => "f" })
 
         # Compare against main
-        stdout, stderr, status = run_bin("git-diff-branch", "main", chdir: repo)
+        _stdout, _stderr, status = run_bin("git-diff-branch", "main", chdir: repo)
 
         # May succeed or fail depending on git version, but should run
         # The command uses range-diff which requires git 2.19+

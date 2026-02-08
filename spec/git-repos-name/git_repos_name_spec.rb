@@ -88,7 +88,7 @@ RSpec.describe "git-repos-name" do
   describe "error handling" do
     it "fails when no remote is configured" do
       with_test_repo do |repo|
-        stdout, stderr, status = run_bin("git-repos-name", chdir: repo)
+        _stdout, stderr, status = run_bin("git-repos-name", chdir: repo)
 
         expect(status).not_to eq(0)
         expect(stderr).to include("Error")
