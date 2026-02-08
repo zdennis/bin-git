@@ -1,5 +1,7 @@
 # bin-git
 
+[![Tests](https://github.com/zdennis/bin-git/actions/workflows/test.yml/badge.svg)](https://github.com/zdennis/bin-git/actions/workflows/test.yml)
+
 A collection of 88 git helper scripts that extend git with useful shortcuts and automation for common workflows.
 
 ## Installation
