@@ -1,13 +1,56 @@
 #!/usr/bin/env sh
 
-GITHUB_USER=$1
+VERSION="1.0.0"
+SCRIPT_NAME="git-pulls"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - List pull requests by author
+
+Usage: $SCRIPT_NAME [options] [username]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Arguments:
+  username       GitHub username (default: git config github.user)
+
+Description:
+  Lists all open pull requests in the current repository by the specified
+  author. If no username is provided, uses the configured github.user.
+
+Examples:
+  # List your PRs
+  $SCRIPT_NAME
+
+  # List PRs by another user
+  $SCRIPT_NAME octocat
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+GITHUB_USER="$1"
 
 if [ -z "$GITHUB_USER" ]; then
-  echo 'No user passed in, defaulting to "git config github.user"'
   GITHUB_USER=$(git config github.user)
 
   if [ -z "$GITHUB_USER" ]; then
-    echo "Error: GitHub user is not set in git config. Please set with 'git config --global github.user <username>'"
+    echo "Error: GitHub user is not set in git config." >&2
+    echo "Please set with: git config --global github.user <username>" >&2
+    echo "Or provide a username as an argument." >&2
     exit 1
   fi
 fi

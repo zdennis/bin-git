@@ -1,3 +1,68 @@
 #!/usr/bin/env bash
 
-g(){ url="https://raw.github.com/github/gitignore/master/$1.gitignore" ; curl --output /dev/null --silent --head --fail "$url" ; if [ $? -eq 0 ]; then curl "$url" >> .gitignore && echo "Appended .gitignore with $url" ; else echo "$url doesnt exist." ; fi ; }; g
+VERSION="1.0.0"
+SCRIPT_NAME="git-add-ignore"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Add a gitignore template from GitHub
+
+Usage: $SCRIPT_NAME [options] <language>
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Arguments:
+  language       The gitignore template name (e.g., Ruby, Python, Node)
+
+Description:
+  Downloads a gitignore template from GitHub's gitignore repository and
+  appends it to your .gitignore file.
+
+  Available templates: https://github.com/github/gitignore
+
+Examples:
+  # Add Ruby gitignore
+  $SCRIPT_NAME Ruby
+
+  # Add Python gitignore
+  $SCRIPT_NAME Python
+
+  # Add Node gitignore
+  $SCRIPT_NAME Node
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+language="$1"
+
+if [ -z "$language" ]; then
+  echo "Error: You must provide a language/template name." >&2
+  echo "Usage: $SCRIPT_NAME <language>" >&2
+  echo "Run '$SCRIPT_NAME --help' for more information." >&2
+  exit 1
+fi
+
+url="https://raw.github.com/github/gitignore/master/$language.gitignore"
+
+if curl --output /dev/null --silent --head --fail "$url"; then
+  curl -s "$url" >> .gitignore
+  echo "Appended .gitignore with $language template from $url"
+else
+  echo "Error: Template '$language' not found at $url" >&2
+  echo "Check available templates at: https://github.com/github/gitignore" >&2
+  exit 1
+fi

@@ -1,0 +1,84 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+
+VERSION = "1.0.0"
+SCRIPT_NAME = File.basename(__FILE__)
+
+def require_or_install(name, version:, require_as: name)
+  require require_as
+rescue LoadError
+  begin
+    puts "Missing gem #{name}. Installing #{name} #{version}..."
+    system "gem install #{name} -v #{version}"
+    Gem.refresh
+    require require_as
+  rescue => ex
+    puts ex
+    puts "#{name} #{version} could not be installed. You will need to install it manually."
+    exit 1
+  end
+end
+
+require_or_install 'term-ansicolor', version: '1.7.1', require_as: 'term/ansicolor'
+
+require 'term/ansicolor'
+include Term::ANSIColor
+
+def main_branch
+  @main_branch ||= begin
+    branch = `git get-main-branch 2>/dev/null`.chomp
+    branch.empty? ? "main" : branch
+  end
+end
+
+options = {
+  base: nil,  # Defer main_branch lookup until needed
+  interactive: false
+}
+OptionParser.new do |opts|
+  opts.banner = "Usage: #{SCRIPT_NAME} [options] [base-branch]"
+
+  opts.on("-i", "--interactive", "Rebase interactively") do
+    options[:interactive] = true
+  end
+
+  opts.on("-v", "--version", "Show version information") do
+    puts "#{SCRIPT_NAME} version #{VERSION}"
+    exit 0
+  end
+
+  opts.on("-h", "--help", "Prints help message") do
+    main_branch_name = main_branch
+    puts <<~HELP
+      #{SCRIPT_NAME} - Rebase branch from divergence point
+
+      #{opts}
+
+      Description:
+        Rebases the current branch starting at the first commit where it
+        diverges from the base branch. Default base is #{main_branch_name}.
+
+      Examples:
+        #{bold("# Rebase interactively from #{main_branch_name}")}
+        #{SCRIPT_NAME} -i
+
+        #{bold("# Rebase from a different base branch")}
+        #{SCRIPT_NAME} -i develop
+
+      Version: #{VERSION}
+    HELP
+    exit 0
+  end
+end.parse!
+
+options[:base] = ARGV.first || main_branch
+
+first_commit_that_diverges = `git log #{options[:base]}..HEAD --format="%h" | tail -n1`.strip
+
+if first_commit_that_diverges
+  command ="git rebase -i #{first_commit_that_diverges}~1"
+  system(command)
+else
+  puts "The current branch doesn't appear to diverge from #{options[:base]}"
+end

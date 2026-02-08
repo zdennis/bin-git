@@ -1,9 +1,63 @@
 #!/usr/bin/env bash
 
-if [ "$1" ]; then
-  tree=$1
+VERSION="1.0.0"
+SCRIPT_NAME="git-tree-url"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Get the GitHub tree URL for a ref
+
+Usage: $SCRIPT_NAME [options] [ref]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Arguments:
+  ref            Branch, tag, or commit (default: current branch)
+
+Description:
+  Generates the GitHub URL to view the repository tree at a specific ref.
+
+Examples:
+  # URL for current branch tree
+  $SCRIPT_NAME
+
+  # URL for specific branch
+  $SCRIPT_NAME main
+
+  # URL for a tag
+  $SCRIPT_NAME v1.0.0
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+if [ -n "$1" ]; then
+  tree="$1"
 else
-  tree=`git current-branch`
+  tree=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+  if [ -z "$tree" ]; then
+    echo "Error: Could not determine current branch" >&2
+    exit 1
+  fi
 fi
 
-echo `git url`/tree/$tree
+url=$(git url 2>/dev/null)
+if [ -z "$url" ]; then
+  echo "Error: Could not determine repository URL" >&2
+  exit 1
+fi
+
+echo "$url/tree/$tree"

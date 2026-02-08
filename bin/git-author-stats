@@ -1,14 +1,58 @@
 #!/bin/sh
 
-#
-# Show author/contributor stats given
-# a path in the repository.
-#
-# Example: git author-stats app/
-# Example: git author-stats file1.rb file2.rb
+VERSION="1.0.0"
+SCRIPT_NAME="git-author-stats"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Show author/contributor stats for paths
+
+Usage: $SCRIPT_NAME [options] <path> [path...]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Arguments:
+  path           One or more file or directory paths (required)
+
+Description:
+  Shows author/contributor statistics for the given paths using git shortlog.
+  Displays commit counts and author information.
+
+Examples:
+  # Stats for a directory
+  $SCRIPT_NAME app/
+
+  # Stats for specific files
+  $SCRIPT_NAME file1.rb file2.rb
+
+  # Stats for multiple paths
+  $SCRIPT_NAME app/models/ lib/
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+if [ $# -eq 0 ]; then
+  echo "Error: You must provide at least one path." >&2
+  echo "Usage: $SCRIPT_NAME <path> [path...]" >&2
+  exit 1
+fi
 
 for path in "$@"; do
   echo "Author stats for $path:"
-  git shortlog -sne --all "$path"
+  git shortlog -sne --all -- "$path"
   echo
 done

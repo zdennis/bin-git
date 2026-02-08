@@ -2,15 +2,21 @@
 
 require 'optparse'
 
+VERSION = "1.0.0"
+SCRIPT_NAME = File.basename(__FILE__)
+
 def require_or_install(name, version:, require_as: name)
   require require_as
 rescue LoadError
   begin
-    install_missing_gem name, version: version
+    puts "Missing gem #{name}. Installing #{name} #{version}..."
+    system "gem install #{name} -v #{version}"
     Gem.refresh
     require require_as
-  rescue
+  rescue => ex
+    puts ex
     puts "#{name} #{version} could not be installed. You will need to install it manually."
+    exit 1
   end
 end
 
@@ -19,42 +25,44 @@ require_or_install 'term-ansicolor', version: '1.7.1', require_as: 'term/ansicol
 require 'term/ansicolor'
 include Term::ANSIColor
 
-SCRIPT_NAME = File.basename(__FILE__)
-
 def main_branch
   @main_branch ||= `git get-main-branch`.chomp
 end
 
 OptionParser.new do |opts|
-  opts.banner = "Usage: #{SCRIPT_NAME} [options] [branch-name]"
+  opts.banner = "Usage: #{SCRIPT_NAME} [options] [ref]"
+
+  opts.on("-v", "--version", "Show version information") do
+    puts "#{SCRIPT_NAME} version #{VERSION}"
+    exit 0
+  end
 
   opts.on("-h", "--help", "Prints help message") do
-    main_branch = `git get-main-branch`.chomp
+    main_branch_name = `git get-main-branch 2>/dev/null`.chomp
+    main_branch_name = "main" if main_branch_name.empty?
 
     puts <<~HELP
-      #{SCRIPT_NAME} is used to display the filenames for a particular range of commits.
+      #{SCRIPT_NAME} - Display changed filenames for a range of commits
 
-      - By default, it will compare the current branch against the #{main_branch} branch
-      - You can pass in SHA reference and it will compare the current HEAD against that
-      - You can all pass in your own range
+      #{opts}
+
+      Description:
+        Shows filenames that changed between commits with their status
+        (Added, Modified, Deleted).
 
       Examples:
-
-        #{bold("# Default: List file names between this branch and #{main_branch}")}
-        # Ends up running: git diff --name-only #{main_branch}..HEAD
+        #{bold("# List files changed between this branch and #{main_branch_name}")}
         #{SCRIPT_NAME}
 
-        #{bold("# List file names in the last two commits on the current branch")}
-        # Ends up running: git diff --name-only HEAD..HEAD~2
+        #{bold("# List files in the last two commits")}
         #{SCRIPT_NAME} HEAD~2
 
-        #{bold("# List file names in a custom commit range")}
-        # Ends up running: git diff --name-only abc..xyz
+        #{bold("# List files in a custom commit range")}
         #{SCRIPT_NAME} abc..xyz
-        HELP
-    puts
-    puts opts
-    exit
+
+      Version: #{VERSION}
+    HELP
+    exit 0
   end
 end.parse!
 

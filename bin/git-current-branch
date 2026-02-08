@@ -1,3 +1,48 @@
 #!/usr/bin/env bash
 
-git branch | grep '*' | cut -f2 -d' ' | tr -d '\n'
+VERSION="1.0.0"
+SCRIPT_NAME="git-current-branch"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Get the name of the current branch
+
+Usage: $SCRIPT_NAME [options]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Description:
+  Outputs the name of the current git branch without a trailing newline.
+  Useful for scripting and command substitution.
+
+Examples:
+  # Get current branch
+  $SCRIPT_NAME
+
+  # Use in other commands
+  git push origin \$($SCRIPT_NAME)
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+if [ -z "$branch" ]; then
+  echo "Error: Not in a git repository or HEAD is detached" >&2
+  exit 1
+fi
+
+printf '%s' "$branch"

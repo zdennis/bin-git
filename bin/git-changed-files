@@ -2,6 +2,9 @@
 
 require "optparse"
 
+VERSION = "1.0.0"
+SCRIPT_NAME = File.basename(__FILE__)
+
 def install_missing_gem(name, version: nil)
   loop do
     puts "The #{name} #{version} gem is missing. Install? [Yn]"
@@ -43,11 +46,13 @@ options = {
   include_specs_for_changed_implementation_files: false
 }
 OptionParser.new do |opts|
+  opts.banner = "Usage: #{SCRIPT_NAME} [options] [ref]"
+
   opts.on("-f", "--file-type=FILE_TYPE", "File type/extension. Can be comma-separate or specified multiple times") do |types|
     options[:file_types].push *types.split(/,/).map(&:strip)
   end
 
-  opts.on("-l", "--list", "List files. Default: #{options.fetch(:list)}") do
+  opts.on("-l", "--list", "List files in table format (Added/Modified/Deleted)") do
     options[:list] = true
   end
 
@@ -62,6 +67,39 @@ OptionParser.new do |opts|
   opts.on("-i", "--include-specs", "Include specs for changed implementation files") do
     options[:include_specs_for_changed_implementation_files] = true
   end
+
+  opts.on("-v", "--version", "Show version information") do
+    puts "#{SCRIPT_NAME} version #{VERSION}"
+    exit 0
+  end
+
+  opts.on("-h", "--help", "Show help message") do
+    puts <<~HELP
+      #{SCRIPT_NAME} - List changed files in branch
+
+      #{opts}
+
+      Description:
+        Lists files changed between main and HEAD (or specified ref).
+        Can filter by file type and include related spec files.
+
+      Examples:
+        # List all changed files
+        #{SCRIPT_NAME}
+
+        # List only Ruby files
+        #{SCRIPT_NAME} -f rb
+
+        # List with table format
+        #{SCRIPT_NAME} -l
+
+        # Include spec files for changed implementation files
+        #{SCRIPT_NAME} -i
+
+      Version: #{VERSION}
+    HELP
+    exit 0
+  end
 end.parse!
 
 main_branch = `git get-main-branch`.chomp
@@ -71,10 +109,12 @@ options[:git_args] = case ARGV.first
     "#{main_branch}...HEAD"
   when /^HEAD~\d+/i
     ARGV.first
-  when /\d+/i
-    "HEAD~#{ARGV.first}"
   when /\.\./
+    # SHA ranges like abc123...def456 - must check before /\d+/ pattern
     ARGV.first
+  when /^\d+$/
+    # Pure numeric argument (e.g., "3") becomes HEAD~3
+    "HEAD~#{ARGV.first}"
   else
     ARGV.join(' ')
   end

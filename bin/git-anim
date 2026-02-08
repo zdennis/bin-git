@@ -1,4 +1,47 @@
 #!/usr/bin/env bash
 
-main_branch=$(git get-main-branch)
-echo "Branches merged into acceptance that are not in $main_branch:" && git log "$main_branch..acceptance" | grep -i 'Merge branch'
+VERSION="1.0.0"
+SCRIPT_NAME="git-anim"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Show branches merged into acceptance but not main
+
+Usage: $SCRIPT_NAME [options]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Description:
+  Lists branches that have been merged into the 'acceptance' branch
+  but not yet into the main branch. Useful for tracking what's staged
+  for release.
+
+Examples:
+  # Show branches in acceptance not in main
+  $SCRIPT_NAME
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+main_branch=$(git get-main-branch 2>/dev/null)
+if [ -z "$main_branch" ]; then
+  echo "Error: Could not determine main branch" >&2
+  exit 1
+fi
+
+echo "Branches merged into acceptance that are not in $main_branch:"
+git log "$main_branch..acceptance" 2>/dev/null | grep -i 'Merge branch'

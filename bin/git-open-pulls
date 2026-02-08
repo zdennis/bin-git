@@ -1,19 +1,56 @@
 #!/usr/bin/env ruby
 
+VERSION = "1.0.0"
+SCRIPT_NAME = File.basename(__FILE__)
+
+if ARGV.include?("-h") || ARGV.include?("--help")
+  puts <<~HELP
+    #{SCRIPT_NAME} - Open pull requests page on GitHub
+
+    Usage: #{SCRIPT_NAME} [options]
+
+    Options:
+      -h, --help     Show this help message
+      -v, --version  Show version information
+
+    Description:
+      Opens the GitHub pull requests page for the current repository
+      in your default browser.
+
+    Examples:
+      #{SCRIPT_NAME}
+
+    Version: #{VERSION}
+  HELP
+  exit 0
+end
+
+if ARGV.include?("-v") || ARGV.include?("--version")
+  puts "#{SCRIPT_NAME} version #{VERSION}"
+  exit 0
+end
+
 def require_or_install(name, version:, require_as: name)
   require require_as
 rescue LoadError
   begin
-    install_missing_gem name, version: version
+    puts "Missing gem #{name}. Installing #{name} #{version}..."
+    system "gem install #{name} -v #{version}"
     Gem.refresh
     require require_as
-  rescue
+  rescue => ex
+    puts ex
     puts "#{name} #{version} could not be installed. You will need to install it manually."
+    exit 1
   end
 end
 
 require_or_install 'term-ansicolor', version: '1.7.1', require_as: 'term/ansicolor'
 
 BASE_URL = `git url`.chomp
+if BASE_URL.empty?
+  STDERR.puts Term::ANSIColor.red("Error: Could not determine repository URL")
+  exit 1
+end
 
-%x{open '#{BASE_URL}/pulls'}
+system("open '#{BASE_URL}/pulls'")

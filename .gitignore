@@ -2,6 +2,16 @@
 bin/git-restore-deleted
 go-commands/git-restore-deleted
 
+# RSpec example status persistence (generated)
+spec/examples.txt
+
+# Bundler binstubs (generated files)
+script/bundle
+script/htmldiff
+script/ldiff
+script/rspec
+script/term_*
+
 # Claude Code
 .claude/settings.local.json
 .claude/projects/
@@ -12,3 +22,4 @@ go-commands/git-restore-deleted
 **/.claude/settings.local.json
 **/.claude/projects/
 **/.claude/todos.json
+tmp/

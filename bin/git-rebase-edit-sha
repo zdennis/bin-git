@@ -1,22 +1,70 @@
 #!/usr/bin/env bash
 
+VERSION="1.0.0"
+SCRIPT_NAME="git-rebase-edit-sha"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Interactive rebase with commits marked for editing
+
+Usage: $SCRIPT_NAME [options] <sha> [sha...]
+       $SCRIPT_NAME [options] <sha-range>
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Arguments:
+  sha            One or more commit SHAs to edit
+  sha-range      A range of commits (e.g., abc123..def456)
+
+Description:
+  Starts an interactive rebase with the specified commits marked for editing.
+  Useful for modifying multiple commits in a single rebase session.
+
+Examples:
+  # Edit a single commit
+  $SCRIPT_NAME abc1234
+
+  # Edit multiple commits
+  $SCRIPT_NAME abc1234 def5678 ghi9012
+
+  # Edit a range of commits
+  $SCRIPT_NAME abc1234..def5678
+
+Note: When using a range, include a caret (^) if you want the start
+      of the range to be inclusive: abc1234^..def5678
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
 set -e
 
 if [ $# -eq 0 ]; then
-  echo "Must provide a SHA or list of SHAs to edit as the argument."
-  echo "Usage: $0 abc123"
-  echo "Usage with multiple shas: $0 abc123 def234 ghi456"
-  echo "Usage with a single range of commits: $0 abc123..ghi456"
-  exit
+  echo "Error: Must provide a SHA or list of SHAs to edit." >&2
+  echo "Usage: $SCRIPT_NAME <sha> [sha...]" >&2
+  echo "Run '$SCRIPT_NAME --help' for more information." >&2
+  exit 1
 fi
 
-POSSIBLE_SHAS=$@
-
+POSSIBLE_SHAS="$*"
+FIRST_SHA="$1"
 
 # Test if we have a range of commits, then expand into individual commits
 if echo "$POSSIBLE_SHAS" | grep -Eq '\.\.' ; then
-  # --reverse is important on th enext line. It ensures we are sorting
-  # commits in oldest-first order which is required for FIRST_SHA to be set correctly
+  # --reverse ensures oldest-first order for FIRST_SHA
   SHAS=$(git log --format=format:%H "$POSSIBLE_SHAS" --reverse | tr '\n' ' ')
   FIRST_SHA=$(echo "$SHAS" | cut -f1 -d" ")
 
@@ -25,34 +73,34 @@ if echo "$POSSIBLE_SHAS" | grep -Eq '\.\.' ; then
   echo
 else
   SHAS="$POSSIBLE_SHAS"
-  FIRST_SHA=$1
+fi
+
+# Verify the first SHA exists
+if ! git rev-parse --verify "$FIRST_SHA^{commit}" > /dev/null 2>&1; then
+  echo "Error: Invalid commit SHA: $FIRST_SHA" >&2
+  exit 1
 fi
 
 tempfile=$(mktemp)
-cat << SCRIPT >> $tempfile &&
+cat << SCRIPT >> "$tempfile"
 #!/usr/bin/env ruby
 GIT_REBASE_TODO_FILE = ARGV.shift || raise(ArgumentError, "Expected git rebase todo as first argument")
-# File.write("/tmp/z.shas", "$SHAS".inspect) # debug line
 EDIT_SHAS = "$SHAS".freeze
 contents = File.read(GIT_REBASE_TODO_FILE)
 
-# only use the first seven characters of each sha as that is what
-# is used by git
+# only use the first seven characters of each sha as that is what is used by git
 shas2edit = EDIT_SHAS.split(/\s+|\s*,\s*/).flatten.map { |sha| sha[0..6] }
-# File.write("/tmp/z.shas2edit", shas2edit.inspect) # debug line
 shas2edit.each do |sha|
   contents.sub!(/pick #{sha}\w*/, "edit #{sha}")
 end
 
-# File.write("/tmp/z.git-rebase-todo-file", contents) # debug line
 File.write(GIT_REBASE_TODO_FILE, contents)
 exit 0
-
 SCRIPT
-echo $tempfile
-chmod a+x $tempfile &&
-GIT_SEQUENCE_EDITOR=$tempfile git rebase -i $FIRST_SHA^ &&
-cat << MESSAGE
 
-You have arrived at the first SHA: $FIRST_SHA
-MESSAGE
+chmod a+x "$tempfile"
+GIT_SEQUENCE_EDITOR="$tempfile" git rebase -i "$FIRST_SHA^"
+rm -f "$tempfile"
+
+echo
+echo "You have arrived at the first SHA: $FIRST_SHA"

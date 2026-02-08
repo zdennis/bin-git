@@ -1,3 +1,55 @@
 #!/usr/bin/env bash
 
-g(){ open `git compare-url $@`; }; g
+VERSION="1.0.0"
+SCRIPT_NAME="git-open-compare"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Open GitHub compare view in browser
+
+Usage: $SCRIPT_NAME [options] [base] [head]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Arguments:
+  base           Base branch (default: main)
+  head           Head branch (default: current branch)
+
+Description:
+  Opens the GitHub compare view in your default browser to see
+  differences between two branches.
+
+Examples:
+  # Compare current branch against main
+  $SCRIPT_NAME
+
+  # Compare against specific base
+  $SCRIPT_NAME develop
+
+  # Compare two specific branches
+  $SCRIPT_NAME main feature-branch
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+url=$(git compare-url "$@" 2>/dev/null)
+if [ -z "$url" ]; then
+  echo "Error: Could not determine compare URL" >&2
+  exit 1
+fi
+
+open "$url"

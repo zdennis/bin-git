@@ -1,5 +1,48 @@
 #!/usr/bin/env bash
 
-# Get the organization name for the current repository.
+VERSION="1.0.0"
+SCRIPT_NAME="git-github-org-name"
 
-git repos-name | sed -e 's/\/.*//'
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Get the GitHub organization/owner name
+
+Usage: $SCRIPT_NAME [options]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Description:
+  Extracts and prints the organization or username from the GitHub
+  repository URL. For example, for 'github.com/rails/rails', returns 'rails'.
+
+Examples:
+  # Get org name
+  $SCRIPT_NAME
+
+  # Use in scripts
+  org=\$($SCRIPT_NAME)
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+repos_name=$(git repos-name 2>/dev/null)
+if [ -z "$repos_name" ]; then
+  echo "Error: Could not determine repository name" >&2
+  exit 1
+fi
+
+echo "$repos_name" | sed -e 's/\/.*//'

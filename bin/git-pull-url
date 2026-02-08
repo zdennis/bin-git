@@ -1,9 +1,64 @@
 #!/usr/bin/env bash
 
+VERSION="1.0.0"
+SCRIPT_NAME="git-pull-url"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Get the GitHub URL for a pull request
+
+Usage: $SCRIPT_NAME [options] [pr-number]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Arguments:
+  pr-number      Pull request number (without #)
+                 If omitted, generates URL to create new PR from current branch
+
+Description:
+  Generates GitHub pull request URLs. If a PR number is given, returns the
+  URL for that PR. Otherwise, returns the URL to create a new PR from
+  the current branch.
+
+Examples:
+  # URL to create new PR from current branch
+  $SCRIPT_NAME
+
+  # URL for existing PR #123
+  $SCRIPT_NAME 123
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+url=$(git url 2>/dev/null)
+if [ -z "$url" ]; then
+  echo "Error: Could not determine repository URL" >&2
+  exit 1
+fi
+
 PR_NUMBER="$1"
 
-if [ "$PR_NUMBER" ]; then
-  echo `git url`/pull/$PR_NUMBER
+if [ -n "$PR_NUMBER" ]; then
+  echo "$url/pull/$PR_NUMBER"
 else
-  echo `git url`/pull/new/`git cbranch`
+  branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+  if [ -z "$branch" ]; then
+    echo "Error: Could not determine current branch" >&2
+    exit 1
+  fi
+  echo "$url/pull/new/$branch"
 fi

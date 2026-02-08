@@ -1,7 +1,53 @@
 #!/usr/bin/env sh
 
-# Compare main branch against the current branch. Show commit differences.
+VERSION="1.0.0"
+SCRIPT_NAME="git-m1"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Show commits on main that are not on the current branch
+
+Usage: $SCRIPT_NAME [options] [ref]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Arguments:
+  ref            Git reference to compare from (default: HEAD)
+
+Description:
+  Compare main branch against the current branch to show what commits
+  are on main that are not on your current branch. Useful to see what
+  you're missing from main.
+
+Examples:
+  # Show commits on main not on this branch
+  $SCRIPT_NAME
+
+  # Compare from a specific ref
+  $SCRIPT_NAME feature-branch
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
 
 GITREF=${1:-HEAD}
 main_branch=$(git get-main-branch)
+if [ -z "$main_branch" ]; then
+  echo "Error: Could not determine main branch" >&2
+  exit 1
+fi
+
 git 1 "$GITREF..$main_branch"

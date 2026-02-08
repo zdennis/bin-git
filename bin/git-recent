@@ -2,15 +2,21 @@
 
 require "optparse"
 
+VERSION = "1.0.0"
+SCRIPT_NAME = File.basename(__FILE__)
+
 def require_or_install(name, version:, require_as: name)
   require require_as
 rescue LoadError
   begin
-    install_missing_gem name, version: version
+    puts "Missing gem #{name}. Installing #{name} #{version}..."
+    system "gem install #{name} -v #{version}"
     Gem.refresh
     require require_as
-  rescue
+  rescue => ex
+    puts ex
     puts "#{name} #{version} could not be installed. You will need to install it manually."
+    exit 1
   end
 end
 
@@ -22,24 +28,35 @@ options = {
 }
 
 OptionParser.new do |opts|
+  opts.banner = "Usage: #{SCRIPT_NAME} [options] [count]"
+
+  opts.on("--version", "Show version information") do
+    puts "#{SCRIPT_NAME} version #{VERSION}"
+    exit 0
+  end
+
   opts.on("-h", "--help", "Prints help") do
-    puts opts
     puts <<~MESSAGE
+      #{SCRIPT_NAME} - List recently worked on branches
 
-      Prints out a list of recent branches that you worked on.
+      #{opts}
 
-      Takes one argument: the number of recent branches to show. Default: #{options.fetch(:number)}.
+      Description:
+        Prints out a list of recent branches sorted by last commit date.
 
-      Example usage:
+      Arguments:
+        count          Number of branches to show (default: #{options.fetch(:number)})
 
-        # show the ten most recent branches worked on
-        git recent
+      Examples:
+        # Show the ten most recent branches
+        #{SCRIPT_NAME}
 
-        # show the one hundred most recent branches
-        git recent 100
+        # Show the 20 most recent branches
+        #{SCRIPT_NAME} 20
+
+      Version: #{VERSION}
     MESSAGE
-
-    exit
+    exit 0
   end
 
   opts.on("-v", "--verbose", "Turn on verbose output") do

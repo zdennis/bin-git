@@ -2,13 +2,16 @@
 
 require 'optparse'
 
+VERSION = "1.0.0"
+SCRIPT_NAME = File.basename(__FILE__)
+
 options = {
   ref: nil,
   line: nil
 }
 
 parser = OptionParser.new do |opts|
-  opts.banner = "Usage: git file-url [options] FILE [FILE...]"
+  opts.banner = "Usage: #{SCRIPT_NAME} [options] FILE [FILE...]"
   opts.separator ""
   opts.separator "Generate GitHub URLs for file(s)"
   opts.separator ""
@@ -22,9 +25,33 @@ parser = OptionParser.new do |opts|
     options[:line] = line
   end
 
+  opts.on("-v", "--version", "Show version information") do
+    puts "#{SCRIPT_NAME} version #{VERSION}"
+    exit 0
+  end
+
   opts.on("-h", "--help", "Show this help message") do
-    puts opts
-    exit
+    puts <<~HELP
+      #{SCRIPT_NAME} - Generate GitHub URLs for file(s)
+
+      #{opts}
+
+      Examples:
+        # URL for a single file
+        #{SCRIPT_NAME} path/to/file.rb
+
+        # URL for a file on specific branch
+        #{SCRIPT_NAME} -r main path/to/file.rb
+
+        # URL for a specific line
+        #{SCRIPT_NAME} -l 42 path/to/file.rb
+
+        # URL for a line range
+        #{SCRIPT_NAME} -l 42:50 path/to/file.rb
+
+      Version: #{VERSION}
+    HELP
+    exit 0
   end
 end
 

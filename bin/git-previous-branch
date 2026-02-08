@@ -1,3 +1,48 @@
 #!/usr/bin/env bash
 
-git reflog | grep 'checkout: moving from' | head -n1 | ruby -e 'puts STDIN.read.scan(/\sfrom\s(.*)\sto\s/)'
+VERSION="1.0.0"
+SCRIPT_NAME="git-previous-branch"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Get the previously checked out branch
+
+Usage: $SCRIPT_NAME [options]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Description:
+  Parses the reflog to find the name of the branch you were on before
+  the current one. Useful for switching back and forth between branches.
+
+Examples:
+  # Show previous branch
+  $SCRIPT_NAME
+
+  # Switch to previous branch
+  git checkout \$($SCRIPT_NAME)
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+result=$(git reflog 2>/dev/null | grep 'checkout: moving from' | head -n1 | sed -E 's/.*from ([^ ]+) to.*/\1/')
+if [ -z "$result" ]; then
+  echo "Error: Could not determine previous branch" >&2
+  exit 1
+fi
+
+echo "$result"

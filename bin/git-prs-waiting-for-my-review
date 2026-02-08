@@ -1,4 +1,50 @@
 #!/usr/bin/env sh
 
-# https://github.com/cli/cli/discussions/4067
+VERSION="1.0.0"
+SCRIPT_NAME="git-prs-waiting-for-my-review"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - List PRs waiting for your review
+
+Usage: $SCRIPT_NAME [options] [gh-search-options]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Description:
+  Searches GitHub for open pull requests where you have been requested
+  as a reviewer. Requires GitHub CLI (gh) to be installed and authenticated.
+
+Examples:
+  # List PRs waiting for your review
+  $SCRIPT_NAME
+
+  # List with additional filters
+  $SCRIPT_NAME --repo owner/repo
+
+Version: $VERSION
+
+Reference: https://github.com/cli/cli/discussions/4067
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+if ! command -v gh > /dev/null 2>&1; then
+  echo "Error: GitHub CLI (gh) is required but not installed." >&2
+  echo "Install with: brew install gh" >&2
+  exit 1
+fi
+
 gh search prs --state=open --review-requested=@me "$@"

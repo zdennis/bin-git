@@ -1,0 +1,68 @@
+#!/bin/bash
+
+VERSION="1.0.0"
+SCRIPT_NAME="git-rebase-rubocop"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Run rubocop autocorrect during rebase
+
+Usage: $SCRIPT_NAME [options]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Description:
+  Script to run rubocop autocorrect on changed Ruby files during a rebase.
+  Handles the common case where rubocop makes changes that need to be amended.
+
+  Note: Requires 'cf' and 'rt' commands to be available.
+
+Usage with git rebase:
+  git rebase -i --exec '$SCRIPT_NAME' <base-commit>^
+
+Example:
+  git rebase -i --exec '$SCRIPT_NAME' 66ac768f0^
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+COMMAND='cf -f rb | grep -v config | rt -b "bin/rubocop -A"'
+
+run_rubocop() {
+  eval "$COMMAND"
+  return $?
+}
+
+# First attempt
+if run_rubocop; then
+  exit 0
+fi
+
+# Rubocop made changes, stage them and retry
+echo "Rubocop made changes, staging and retrying..."
+git add -u .
+
+if run_rubocop; then
+  git commit --amend --no-edit
+  exit 0
+fi
+
+# Still failing
+echo ""
+echo "ERROR: Rubocop issues remain. Please resolve manually, then run:"
+echo "  git add -u . && git commit --amend --no-edit && git rebase --continue"
+exit 1

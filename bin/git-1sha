@@ -1,9 +1,55 @@
 #!/bin/sh
 
-# Print out the SHA of each commit from main/master to the
-# current HEAD (default) or a sha/branch/etc reference when provided.
+VERSION="1.0.0"
+SCRIPT_NAME="git-1sha"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Print short SHAs of commits since main branch
+
+Usage: $SCRIPT_NAME [options] [ref]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Arguments:
+  ref            Git reference (default: HEAD)
+
+Description:
+  Print out the short SHA of each commit from main/master to the
+  current HEAD (or specified reference). Useful for scripting.
+
+Examples:
+  # Show SHAs of commits on this branch
+  $SCRIPT_NAME
+
+  # Show SHAs up to a specific branch
+  $SCRIPT_NAME feature-branch
+
+  # Count commits on this branch
+  $SCRIPT_NAME | wc -l
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
 
 GITREF=${1:-HEAD}
 main_branch=$(git get-main-branch)
+if [ -z "$main_branch" ]; then
+  echo "Error: Could not determine main branch" >&2
+  exit 1
+fi
 
 git log --pretty="format:%h" "$main_branch..$GITREF"

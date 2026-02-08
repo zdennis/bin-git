@@ -1,3 +1,64 @@
 #!/usr/bin/env bash
 
-function mhsrc_gitconfig_rollback(){ num=$1 ;git reset --soft HEAD~$num ; echo Rolled back softly $num commits ;} ; mhsrc_gitconfig_rollback 
+VERSION="1.0.0"
+SCRIPT_NAME="git-rollback"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Soft reset the last N commits
+
+Usage: $SCRIPT_NAME [options] <number>
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Arguments:
+  number         Number of commits to roll back (required)
+
+Description:
+  Performs a soft reset, moving HEAD back N commits while keeping all
+  changes staged. Useful for reorganizing recent commits.
+
+Examples:
+  # Roll back 1 commit
+  $SCRIPT_NAME 1
+
+  # Roll back 3 commits
+  $SCRIPT_NAME 3
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+num="$1"
+
+if [ -z "$num" ]; then
+  echo "Error: You must specify the number of commits to roll back." >&2
+  echo "Usage: $SCRIPT_NAME <number>" >&2
+  exit 1
+fi
+
+if ! [[ "$num" =~ ^[0-9]+$ ]]; then
+  echo "Error: Argument must be a positive integer." >&2
+  exit 1
+fi
+
+if [ "$num" -eq 0 ]; then
+  echo "Error: Number of commits must be greater than 0." >&2
+  exit 1
+fi
+
+git reset --soft "HEAD~$num"
+echo "Rolled back softly $num commit(s)"

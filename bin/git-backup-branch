@@ -4,6 +4,9 @@ require 'optparse'
 require 'date'
 require 'shellwords'
 
+VERSION = "1.1.0"
+SCRIPT_NAME = File.basename(__FILE__)
+
 def require_or_install(name, version:, require_as: name)
   require require_as
 rescue LoadError => ex
@@ -21,7 +24,6 @@ end
 
 require_or_install 'term-ansicolor', version: '1.7.1', require_as: 'term/ansicolor'
 
-SCRIPT_NAME = File.basename(__FILE__)
 $quiet = false
 
 def info(message)
@@ -97,6 +99,11 @@ OptionParser.new do |opts|
 
   opts.on("-q", "--quiet", "Suppress informational output (errors still shown)") do
     options[:quiet] = true
+  end
+
+  opts.on("-v", "--version", "Show version information") do
+    puts "#{SCRIPT_NAME} version #{VERSION}"
+    exit 0
   end
 
   opts.on("-h", "--help", "Prints help message") do

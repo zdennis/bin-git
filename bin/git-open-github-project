@@ -2,6 +2,7 @@
 
 require 'optparse'
 
+VERSION = "1.0.0"
 SCRIPT_NAME = File.basename(__FILE__)
 
 def bold(str)
@@ -13,19 +14,30 @@ def red(str)
 end
 
 OptionParser.new do |opts|
-  opts.banner = "Usage: #{SCRIPT_NAME} [options] [github project]"
+  opts.banner = "Usage: #{SCRIPT_NAME} [options] <org/repo>"
+
+  opts.on("-v", "--version", "Show version information") do
+    puts "#{SCRIPT_NAME} version #{VERSION}"
+    exit 0
+  end
+
   opts.on("-h", "--help", "Prints help message") do
     puts <<~HELP
-      #{SCRIPT_NAME} is used to open a project on Github in your default browser.
+      #{SCRIPT_NAME} - Open a GitHub project in browser
 
-      Example:
+      #{opts}
 
-         #{SCRIPT_NAME} rails/rails
-         #{SCRIPT_NAME} ruby/ruby
+      Description:
+        Opens a GitHub project in your default browser. Takes the project
+        in 'organization/repository' format.
+
+      Examples:
+        #{SCRIPT_NAME} rails/rails
+        #{SCRIPT_NAME} ruby/ruby
+
+      Version: #{VERSION}
     HELP
-    puts
-    puts opts
-    exit
+    exit 0
   end
 end.parse!
 

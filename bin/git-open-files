@@ -1,3 +1,67 @@
 #!/usr/bin/env bash
 
-f() { find . -name \"*$1*\" | grep -v .git | sed -e 's/\.\///' | xargs -I{} open `git url`/blob/`git cbranch`/{}; }; f
+VERSION="1.0.0"
+SCRIPT_NAME="git-open-files"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Open matching files on GitHub
+
+Usage: $SCRIPT_NAME [options] <pattern>
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Arguments:
+  pattern        File name pattern to search for (required)
+
+Description:
+  Finds files matching a pattern and opens them on GitHub in your browser.
+  Excludes .git directory from search.
+
+Examples:
+  # Open all files containing "user" in the name
+  $SCRIPT_NAME user
+
+  # Open all controller files
+  $SCRIPT_NAME controller
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+pattern="$1"
+
+if [ -z "$pattern" ]; then
+  echo "Error: You must provide a file pattern." >&2
+  echo "Usage: $SCRIPT_NAME <pattern>" >&2
+  exit 1
+fi
+
+base_url=$(git url 2>/dev/null)
+if [ -z "$base_url" ]; then
+  echo "Error: Could not determine repository URL" >&2
+  exit 1
+fi
+
+branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+if [ -z "$branch" ]; then
+  echo "Error: Could not determine current branch" >&2
+  exit 1
+fi
+
+find . -name "*$pattern*" | grep -v .git | sed -e 's/\.\///' | while read -r file; do
+  open "$base_url/blob/$branch/$file"
+done

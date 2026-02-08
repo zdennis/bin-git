@@ -1,4 +1,40 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-echo $DIR $@
+VERSION="1.0.0"
+SCRIPT_NAME="git-bin-git-path"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Print the path to git bin directory
+
+Usage: $SCRIPT_NAME [options]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Description:
+  Prints the directory path where this script (and other git commands)
+  are located. Useful for debugging or finding script locations.
+
+Examples:
+  # Get the bin-git path
+  $SCRIPT_NAME
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+echo "$DIR"

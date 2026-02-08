@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+
+VERSION="1.0.0"
+SCRIPT_NAME="git-squash-all-commits"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Squash all commits on current branch into one
+
+Usage: $SCRIPT_NAME [options] [message]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Arguments:
+  message        Commit message for the squashed commit (optional)
+                 If not provided, opens editor for message
+
+Description:
+  Squashes all commits on the current branch (since diverging from main)
+  into a single commit. Useful for cleaning up branch history before merge.
+
+Examples:
+  # Squash with interactive message
+  $SCRIPT_NAME
+
+  # Squash with specified message
+  $SCRIPT_NAME "Feature: Add new login flow"
+
+Reference: https://stackoverflow.com/questions/25356810/git-how-to-squash-all-commits-on-branch
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+main_branch=$(git get-main-branch 2>/dev/null)
+if [ -z "$main_branch" ]; then
+  echo "Error: Could not determine main branch" >&2
+  exit 1
+fi
+
+# Get the merge base (where current branch diverged from main)
+merge_base=$(git merge-base "$main_branch" HEAD)
+if [ -z "$merge_base" ]; then
+  echo "Error: Could not determine merge base with $main_branch" >&2
+  exit 1
+fi
+
+# Count commits to squash
+commit_count=$(git rev-list --count "$merge_base..HEAD")
+if [ "$commit_count" -eq 0 ]; then
+  echo "No commits to squash (branch is at same point as $main_branch)"
+  exit 0
+fi
+
+echo "Squashing $commit_count commit(s) since $main_branch..."
+
+# Soft reset to merge base, keeping all changes staged
+git reset --soft "$merge_base"
+
+# Commit with provided message or open editor
+if [ -n "$1" ]; then
+  git commit -m "$1"
+else
+  git commit
+fi
+
+echo "Done! $commit_count commits squashed into one."
