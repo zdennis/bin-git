@@ -31,11 +31,15 @@ end
 # Helper module for running commands and managing test git repositories
 module CommandHelper
   # Run a command and return [stdout, stderr, exit_status]
+  # Automatically includes BIN_DIR in PATH so scripts can call each other
   def run_command(command, chdir: nil, env: {})
     options = {}
     options[:chdir] = chdir if chdir
 
-    stdout, stderr, status = Open3.capture3(env, command, **options)
+    # Ensure BIN_DIR is in PATH so scripts can call other bin scripts
+    env_with_path = { "PATH" => "#{BIN_DIR}:#{ENV['PATH']}" }.merge(env)
+
+    stdout, stderr, status = Open3.capture3(env_with_path, command, **options)
     [stdout, stderr, status.exitstatus]
   end
 
