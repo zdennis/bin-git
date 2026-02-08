@@ -215,7 +215,7 @@ class GitUnmerged
   end
 
   def print_version
-    puts "#{VERSION}"
+    puts "git-unmerged version #{VERSION}"
   end
 
   def main_branch
