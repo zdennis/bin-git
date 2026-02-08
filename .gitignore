@@ -1,3 +1,14 @@
 # Don't commit binaries; run git-build-go-helpers to build+install
 bin/git-restore-deleted
 go-commands/git-restore-deleted
+
+# Claude Code
+.claude/settings.local.json
+.claude/projects/
+.claude/todos.json
+.claude/*.log
+
+# Nested .claude directories (e.g., in subdirectories)
+**/.claude/settings.local.json
+**/.claude/projects/
+**/.claude/todos.json
