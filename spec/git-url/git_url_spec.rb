@@ -51,7 +51,7 @@ RSpec.describe "git-url" do
         repo_path = File.join(tmpdir, "repo")
         FileUtils.mkdir_p(repo_path)
 
-        run_command("git init", chdir: repo_path)
+        run_command("git init -b main", chdir: repo_path)
         run_command("git config user.email 'test@example.com'", chdir: repo_path)
         run_command("git config user.name 'Test User'", chdir: repo_path)
         run_command("git remote add origin #{remote_url}", chdir: repo_path)

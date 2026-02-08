@@ -47,11 +47,11 @@ RSpec.describe "git-remote-branch" do
 
         # Create bare remote
         FileUtils.mkdir_p(bare_repo)
-        run_command("git init --bare", chdir: bare_repo)
+        run_command("git init --bare -b main", chdir: bare_repo)
 
         # Create working repo
         FileUtils.mkdir_p(work_repo)
-        run_command("git init", chdir: work_repo)
+        run_command("git init -b main", chdir: work_repo)
         run_command("git config user.email 'test@example.com'", chdir: work_repo)
         run_command("git config user.name 'Test User'", chdir: work_repo)
         run_command("git remote add origin #{bare_repo}", chdir: work_repo)
