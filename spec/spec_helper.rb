@@ -72,7 +72,8 @@ module GitRepoHelper
       FileUtils.mkdir_p(repo_path)
 
       # Initialize git repo with initial commit
-      run_command("git init", chdir: repo_path)
+      # Use -b main to ensure consistent default branch across environments
+      run_command("git init -b main", chdir: repo_path)
       run_command("git config user.email 'test@example.com'", chdir: repo_path)
       run_command("git config user.name 'Test User'", chdir: repo_path)
 
