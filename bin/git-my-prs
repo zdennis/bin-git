@@ -1,10 +1,50 @@
 #!/usr/bin/env sh
 
+VERSION="1.0.0"
+SCRIPT_NAME="git-my-prs"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - List your open pull requests
+
+Usage: $SCRIPT_NAME [options]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Description:
+  Lists all open pull requests authored by you in the current repository.
+  Requires 'github.user' to be set in git config.
+
+Setup:
+  git config --global github.user <your-github-username>
+
+Examples:
+  # List your open PRs
+  $SCRIPT_NAME
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
 GITHUB_USER=$(git config github.user)
 
 if [ -z "$GITHUB_USER" ]; then
-  echo "Error: GitHub user is not set in git config. Please set with 'git config --global github.user <username>'"
+  echo "Error: GitHub user is not set in git config." >&2
+  echo "Please set with: git config --global github.user <username>" >&2
   exit 1
-else
-  gh pr ls --author "$GITHUB_USER"
 fi
+
+gh pr ls --author "$GITHUB_USER"

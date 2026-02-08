@@ -2,6 +2,7 @@
 
 require 'optparse'
 
+VERSION = "1.0.0"
 SCRIPT_NAME = File.basename(__FILE__)
 
 def bold(str)
@@ -17,27 +18,36 @@ options = {
 }
 
 OptionParser.new do |opts|
-  opts.banner = "Usage: #{SCRIPT_NAME} [options] [path/to/flie]"
+  opts.banner = "Usage: #{SCRIPT_NAME} [options] <path/to/file>"
 
-  opts.on("-m", "--main", "Open the file on the main branch instead of current branch. E.g. main or master. Default: #{options.fetch(:open_on_main_branch)}") do
+  opts.on("-m", "--main", "Open the file on the main branch instead of current branch") do
     options[:open_on_main_branch] = true
+  end
+
+  opts.on("-v", "--version", "Show version information") do
+    puts "#{SCRIPT_NAME} version #{VERSION}"
+    exit 0
   end
 
   opts.on("-h", "--help", "Prints help message") do
     puts <<~HELP
-      #{SCRIPT_NAME} is used to open a path on Github in your default browser.
+      #{SCRIPT_NAME} - Open a file on GitHub in browser
 
-      Example for opening a file on the current branch:
+      #{opts}
 
+      Description:
+        Opens a file from the repository on GitHub in your default browser.
+
+      Examples:
+        # Open file on current branch
         #{SCRIPT_NAME} spec/models/wibble_spec.rb
 
-      Example for opening a file on the main branch (e.g. main or master):
-
+        # Open file on main branch
         #{SCRIPT_NAME} -m spec/models/wibble_spec.rb
+
+      Version: #{VERSION}
     HELP
-    puts
-    puts opts
-    exit
+    exit 0
   end
 end.parse!
 

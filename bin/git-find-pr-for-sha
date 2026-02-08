@@ -1,22 +1,76 @@
 #!/bin/sh
 
-main_branch=$(git get-main-branch)
+VERSION="1.0.0"
+SCRIPT_NAME="git-find-pr-for-sha"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Find the pull request that contains a commit
+
+Usage: $SCRIPT_NAME [options] <sha>
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Arguments:
+  sha            The commit SHA to find the PR for (required)
+
+Description:
+  Finds the pull request that introduced a specific commit by searching
+  the merge history. Returns the GitHub PR URL if found.
+
+Examples:
+  # Find PR for commit abc1234
+  $SCRIPT_NAME abc1234
+
+  # Open the PR in browser
+  open \$($SCRIPT_NAME abc1234)
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
 
 if [ -z "$1" ]; then
-  echo "Usage: git getpull <SHA>"
+  echo "Error: You must provide a SHA." >&2
+  echo "Usage: $SCRIPT_NAME <sha>" >&2
   exit 1
-elif [ -z "$(git rev-parse --git-dir 2>/dev/null)" ]; then
-  echo "Not in a git directory"
-  exit 1
-else
-  project_url=$(git url)
-  pull_base_url="$project_url/pull"
-  pull_id=$(git log "$1..$main_branch" --ancestry-path --merges --oneline 2>/dev/null | tail -n 1 | perl -nle 'print $1 if /#(\d+)/')
+fi
 
-  if [ -n "$pull_id" ]; then
-    echo "$pull_base_url/$pull_id"
-  else
-    echo "Sorry, couldn't find that pull"
-    exit 1
-  fi
+if [ -z "$(git rev-parse --git-dir 2>/dev/null)" ]; then
+  echo "Error: Not in a git repository" >&2
+  exit 1
+fi
+
+main_branch=$(git get-main-branch 2>/dev/null)
+if [ -z "$main_branch" ]; then
+  echo "Error: Could not determine main branch" >&2
+  exit 1
+fi
+
+project_url=$(git url 2>/dev/null)
+if [ -z "$project_url" ]; then
+  echo "Error: Could not determine repository URL" >&2
+  exit 1
+fi
+
+pull_base_url="$project_url/pull"
+pull_id=$(git log "$1..$main_branch" --ancestry-path --merges --oneline 2>/dev/null | tail -n 1 | perl -nle 'print $1 if /#(\d+)/')
+
+if [ -n "$pull_id" ]; then
+  echo "$pull_base_url/$pull_id"
+else
+  echo "Error: Could not find a pull request for SHA: $1" >&2
+  exit 1
 fi

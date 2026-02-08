@@ -1,5 +1,42 @@
 #!/usr/bin/env sh
 
-# Compare current branch against the main branch. Show commit differences.
+VERSION="1.0.0"
+SCRIPT_NAME="git-1m"
 
-git 1 $@
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Show commits on the current branch vs main
+
+Usage: $SCRIPT_NAME [options] [git-log-options]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Description:
+  Compare current branch against the main branch to show commit differences.
+  This is an alias for 'git 1' which shows commits in oneline format.
+
+Examples:
+  # Show commits on this branch not in main
+  $SCRIPT_NAME
+
+  # Show with author info
+  $SCRIPT_NAME --author
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+git 1 "$@"

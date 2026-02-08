@@ -1,8 +1,40 @@
 #!/usr/bin/env ruby
 
+VERSION = "1.0.0"
+SCRIPT_NAME = File.basename(__FILE__)
+
+if ARGV.include?("-h") || ARGV.include?("--help")
+  puts <<~HELP
+    #{SCRIPT_NAME} - List dangling commits in the repository
+
+    Usage: #{SCRIPT_NAME} [options]
+
+    Options:
+      -h, --help     Show this help message
+      -v, --version  Show version information
+
+    Description:
+      Finds and lists dangling commits (commits not reachable from any branch
+      or tag). These are commits that might have been lost due to branch
+      deletion or hard resets. Must be run from repository root.
+
+    Examples:
+      # List all dangling commits
+      #{SCRIPT_NAME}
+
+    Version: #{VERSION}
+  HELP
+  exit 0
+end
+
+if ARGV.include?("-v") || ARGV.include?("--version")
+  puts "#{SCRIPT_NAME} version #{VERSION}"
+  exit 0
+end
+
 # Make sure we're at the root of a git repository.
-if ! File.directory? ".git"
-  puts "please run this from the root of a git repository"
+unless File.directory?(".git")
+  STDERR.puts "Error: Please run this from the root of a git repository"
   exit 1
 end
 
@@ -10,14 +42,19 @@ end
 fsck = `git fsck --lost-found 2>&1 | grep "dangling commit"`
 
 # Clean up the list so we have just a list of SHA-1s.
-commits = fsck.split(/[\r\n]+/).map(&:strip).map { |c| c[/[a-f0-9]{40}/] }
+commits = fsck.split(/[\r\n]+/).map(&:strip).map { |c| c[/[a-f0-9]{40}/] }.compact
+
+if commits.empty?
+  puts "No dangling commits found"
+  exit 0
+end
 
 # Get the oneline description of each commit.
 logs = commits.map { |c| c + `git show --oneline #{c} 2>&1 | head -n 1` }
 
 # Remove the partial SHA-1 added by "git show" in favor of the full SHA-1 we
 # prepended above.
-logs.each { |log| log.sub! /[a-f0-9]{7} /, " " }
+logs.each { |log| log.sub!(/[a-f0-9]{7} /, " ") }
 
 # Print the results.
 logs.each { |log| puts log }

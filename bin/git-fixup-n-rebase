@@ -1,5 +1,52 @@
 #!/usr/bin/env bash
 
-SHA=$1
+VERSION="1.0.0"
+SCRIPT_NAME="git-fixup-n-rebase"
 
-git fixup $SHA && git rebase-sha $SHA
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Create a fixup commit and immediately rebase
+
+Usage: $SCRIPT_NAME [options] <sha>
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Arguments:
+  sha            The commit SHA to fixup and rebase onto (required)
+
+Description:
+  Combines git fixup and git rebase-sha into one command.
+  Creates a fixup commit for the specified SHA and then starts an
+  interactive rebase to squash it.
+
+Examples:
+  # Stage changes, then fixup and rebase in one step
+  git add file.txt
+  $SCRIPT_NAME abc1234
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+SHA="$1"
+
+if [ -z "$SHA" ]; then
+  printf "\e[31mError: You must pass a SHA.\e[0m\n" >&2
+  printf "Usage: $SCRIPT_NAME <sha>\n" >&2
+  exit 1
+fi
+
+git fixup "$SHA" && git rebase-sha "$SHA"

@@ -2,15 +2,21 @@
 
 require 'optparse'
 
+VERSION = "1.0.0"
+SCRIPT_NAME = File.basename(__FILE__)
+
 def require_or_install(name, version:, require_as: name)
   require require_as
 rescue LoadError
   begin
-    install_missing_gem name, version: version
+    puts "Missing gem #{name}. Installing #{name} #{version}..."
+    system "gem install #{name} -v #{version}"
     Gem.refresh
     require require_as
-  rescue
+  rescue => ex
+    puts ex
     puts "#{name} #{version} could not be installed. You will need to install it manually."
+    exit 1
   end
 end
 
@@ -19,49 +25,56 @@ require_or_install 'term-ansicolor', version: '1.7.1', require_as: 'term/ansicol
 require 'term/ansicolor'
 include Term::ANSIColor
 
-SCRIPT_NAME = File.basename(__FILE__)
-
 options = {
   numchars: nil,
   short: false
 }
 opts = OptionParser.new do |opts|
-  opts.banner = "Usage: #{SCRIPT_NAME} [options]"
+  opts.banner = "Usage: #{SCRIPT_NAME} [options] [sha]"
 
   opts.on("-n=NUMCHARS", "--num-chars=NUMCHARS", "Number of characters to copy") do |num|
     options[:numchars] = num.to_i
   end
 
-  opts.on("--gcb-short", "Copies the short version of the SHA just like Google Cloud Build does. First seven characters.") do
+  opts.on("--gcb-short", "Copies the short version of the SHA (7 chars, Google Cloud Build style)") do
     options[:numchars] = 7
   end
 
-  opts.on("-s", "--short-abbrev", "Copy the short-abbreviated for mof the current SHA") do
+  opts.on("-s", "--short-abbrev", "Copy the short-abbreviated form of the current SHA") do
     options[:short] = true
+  end
+
+  opts.on("-v", "--version", "Show version information") do
+    puts "#{SCRIPT_NAME} version #{VERSION}"
+    exit 0
   end
 
   opts.on("-h", "--help", "Prints help message") do
     puts <<~HELP
-      #{SCRIPT_NAME} copies the current sha to the clipboard.
+      #{SCRIPT_NAME} - Copy commit SHA to clipboard
+
+      #{opts}
 
       Examples:
 
         #{bold("# Copies the current commit's SHA")}
         #{SCRIPT_NAME}
 
-        #{bold("# Copies the first short abbreviated format of the current commit's SHA")}
-        #{bright_black(bold("# https://cloud.google.com/cloud-build/docs/configuring-builds/substitute-variable-values"))}
+        #{bold("# Copies the short abbreviated SHA")}
         #{SCRIPT_NAME} -s
 
-        #{bold("# Copies the SHORT_SHA specified by Google Cloud Build")}
+        #{bold("# Copies the SHORT_SHA (7 chars, Google Cloud Build style)")}
         #{SCRIPT_NAME} --gcb-short
 
-        #{bold("# Copies the first 20 character of the commit SHA")}
+        #{bold("# Copies the first 20 characters of the commit SHA")}
         #{SCRIPT_NAME} -n 20
+
+        #{bold("# Copies a specific SHA")}
+        #{SCRIPT_NAME} abc1234
+
+      Version: #{VERSION}
     HELP
-    puts
-    puts opts
-    exit
+    exit 0
   end
 end.parse!
 

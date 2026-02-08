@@ -1,16 +1,49 @@
 #!/bin/sh
 
-#
-# This is used to see differences between your current topic branch/head
-# and a target source branch/ref.
-#
-# The default is to compare a local branch against its remote upstream. E.g.
-#
-#   git diff-branch # => git range-diff -p @{u}...head
-#
-# You can pass in an argument to change the source:
-#
-#  git diff-branch master # => git range-diff -p master...head
+VERSION="1.0.0"
+SCRIPT_NAME="git-diff-branch"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Show range-diff between branches
+
+Usage: $SCRIPT_NAME [options] [base-ref]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Arguments:
+  base-ref       Base reference to compare against (default: @{u} - upstream)
+
+Description:
+  Uses git range-diff to see differences between your current topic branch
+  and a target source branch/ref. The default compares against the upstream.
+
+Examples:
+  # Compare against upstream
+  $SCRIPT_NAME
+
+  # Compare against main branch
+  $SCRIPT_NAME main
+
+  # Compare against a specific branch
+  $SCRIPT_NAME origin/develop
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
 
 base_ref=${1:-"@{u}"}
 git range-diff -p "${base_ref}"...head

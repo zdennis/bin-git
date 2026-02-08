@@ -1,14 +1,54 @@
 #!/usr/bin/env sh
 
-# This script is for determining what the primary branch is for a repository. It used to commonly be master
-# but now it is regularly being main so look for either branch and return the first match.
+VERSION="1.0.0"
+SCRIPT_NAME="git-get-main-branch"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Determine the primary branch name (main or master)
+
+Usage: $SCRIPT_NAME [options]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Description:
+  Determines whether the repository uses 'main' or 'master' as its primary
+  branch. Returns the first one that exists, preferring 'main'.
+
+  Exit codes:
+    0 - Found main branch (prints branch name)
+    1 - No main/master branch found
+
+Examples:
+  # Get main branch name
+  $SCRIPT_NAME
+
+  # Use in scripts
+  main_branch=\$($SCRIPT_NAME)
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
 
 for branch in main master; do
-  git rev-parse --verify "$branch" 1> /dev/null 2> /dev/null
-  if [ $? -eq 0 ]; then
-    echo $branch
+  if git rev-parse --verify "$branch" > /dev/null 2>&1; then
+    echo "$branch"
     exit 0
   fi
 done
 
+echo "Error: Neither 'main' nor 'master' branch found" >&2
 exit 1

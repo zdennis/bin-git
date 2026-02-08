@@ -1,3 +1,43 @@
 #!/usr/bin/env bash
 
+VERSION="1.0.0"
+SCRIPT_NAME="git-ignore-files-for-grep"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Generate grep exclude flags from .gitignore
+
+Usage: $SCRIPT_NAME [options]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Description:
+  Reads .gitignore and outputs --exclude flags for grep to ignore
+  the same files. Output can be used with command substitution.
+
+Examples:
+  # Use with grep
+  grep -r "pattern" \$($SCRIPT_NAME) .
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+if [ ! -f .gitignore ]; then
+  exit 0
+fi
+
 cat .gitignore | sed -E 's/(.*)$/ --exclude \1/g' | tr '\n' ' '

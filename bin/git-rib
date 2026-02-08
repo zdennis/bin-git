@@ -1,3 +1,45 @@
 #!/usr/bin/env bash
 
-git rebase ${git get-main-branch} -i
+VERSION="1.0.0"
+SCRIPT_NAME="git-rib"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Interactive rebase on main branch
+
+Usage: $SCRIPT_NAME [options]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Description:
+  Starts an interactive rebase onto the main branch (main or master).
+  Shorthand for: git rebase <main-branch> -i
+
+Examples:
+  # Start interactive rebase
+  $SCRIPT_NAME
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+main_branch=$(git get-main-branch 2>/dev/null)
+if [ -z "$main_branch" ]; then
+  echo "Error: Could not determine main branch" >&2
+  exit 1
+fi
+
+git rebase "$main_branch" -i

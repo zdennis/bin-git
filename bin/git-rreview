@@ -1,3 +1,54 @@
 #!/usr/bin/env bash
 
-git log `git rbranch`..`git cbranch` $@
+VERSION="1.0.0"
+SCRIPT_NAME="git-rreview"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Show local commits not on remote (reverse review)
+
+Usage: $SCRIPT_NAME [options] [git-log-options]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Description:
+  Shows commits that are on your local branch but not on the remote branch.
+  Useful for reviewing what you're about to push.
+
+Examples:
+  # Review outgoing commits
+  $SCRIPT_NAME
+
+  # Review with oneline format
+  $SCRIPT_NAME --oneline
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+local_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+if [ -z "$local_branch" ]; then
+  echo "Error: Could not determine current branch" >&2
+  exit 1
+fi
+
+remote_branch=$(git remote-branch 2>/dev/null)
+if [ -z "$remote_branch" ]; then
+  echo "Error: Could not determine remote branch" >&2
+  exit 1
+fi
+
+git log "$remote_branch..$local_branch" "$@"

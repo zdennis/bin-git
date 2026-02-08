@@ -1,3 +1,51 @@
 #!/usr/bin/env bash
 
-f() { tempfile=`mktemp` && chmod a+x $tempfile && GIT_SEQUENCE_EDITOR=$tempfile git rebase -i $1 && rm $tempfile; }; f
+VERSION="1.0.0"
+SCRIPT_NAME="git-rebase-sha-bash"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Auto-accept interactive rebase
+
+Usage: $SCRIPT_NAME [options] <sha>
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Arguments:
+  sha            Commit SHA to rebase from
+
+Description:
+  Starts an interactive rebase using an empty editor that auto-accepts
+  the rebase todo. Useful for automated rebasing workflows.
+
+Examples:
+  # Rebase from a specific commit
+  $SCRIPT_NAME abc1234
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+if [ -z "$1" ]; then
+  echo "Error: You must provide a SHA to rebase from." >&2
+  echo "Usage: $SCRIPT_NAME <sha>" >&2
+  exit 1
+fi
+
+tempfile=$(mktemp)
+chmod a+x "$tempfile"
+GIT_SEQUENCE_EDITOR="$tempfile" git rebase -i "$1"
+rm -f "$tempfile"

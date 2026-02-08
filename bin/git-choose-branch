@@ -1,9 +1,40 @@
 #!/usr/bin/env ruby
 
+VERSION = "1.0.0"
+SCRIPT_NAME = File.basename(__FILE__)
+
+if ARGV.include?("-h") || ARGV.include?("--help")
+  puts <<~HELP
+    #{SCRIPT_NAME} - Interactively choose and switch to a branch
+
+    Usage: #{SCRIPT_NAME} [options]
+
+    Options:
+      -h, --help     Show this help message
+      -v, --version  Show version information
+
+    Description:
+      Shows a list of recent branches and lets you interactively select
+      one to check out. Requires the 'highline' gem.
+
+    Examples:
+      # Choose from recent branches
+      #{SCRIPT_NAME}
+
+    Version: #{VERSION}
+  HELP
+  exit 0
+end
+
+if ARGV.include?("-v") || ARGV.include?("--version")
+  puts "#{SCRIPT_NAME} version #{VERSION}"
+  exit 0
+end
+
 def install_missing_gem(name, version:)
   loop do
     puts "The #{name} #{version} gem is missing. Install? [Yn]"
-    answer = gets
+    answer = $stdin.gets
     if answer =~ /y/i
       system "gem install #{name} -v #{version}"
       break
@@ -20,8 +51,10 @@ rescue LoadError
     install_missing_gem name, version: version
     Gem.refresh
     require require_as
-  rescue
+  rescue => ex
     puts "#{name} #{version} could not be installed. You will need to install it manually."
+    puts ex
+    exit 1
   end
 end
 
@@ -29,7 +62,8 @@ require_or_install 'highline', version: '2.0.2'
 require_or_install 'term-ansicolor', version: '1.7.1', require_as: 'term/ansicolor'
 
 trap('INT') do
-  exit
+  puts "\nAborted"
+  exit 0
 end
 
 cli = HighLine.new
@@ -39,29 +73,30 @@ puts "Running #{command}"
 puts
 
 results = `#{command}`
-if $?.success?
-  current_branch = `git branch | grep '*'`.chomp.gsub(/^\s*\*\s*/, '')
-  answer = cli.choose do |menu|
-    menu.header = "Select a branch"
-    menu.prompt = "\nWhich branch?"
-    branches = results.lines.map(&:chomp)
-    branches.each_with_index do |branch|
-      if branch == current_branch
-        branch = [branch, Term::ANSIColor.bold('(current)')].join(' ')
-        default = branch
-      end
-      menu.choice(branch)
-    end
-  end
+unless $?.success?
+  STDERR.puts "Error: Failed to get recent branches"
+  exit 1
+end
 
-  answer_without_ansi = answer.gsub(/\e\[\d+m/, '')
-  answer_without_current_marker = answer_without_ansi.gsub(/\s*\(current\)\s*/, '')
-  if answer_without_current_marker.nil? || answer_without_current_marker.empty?
-    puts "No switching branches"
-  else
-    puts "Checking out #{answer_without_current_marker}"
-    system "git checkout #{answer_without_current_marker}"
+current_branch = `git rev-parse --abbrev-ref HEAD`.chomp
+answer = cli.choose do |menu|
+  menu.header = "Select a branch"
+  menu.prompt = "\nWhich branch?"
+  branches = results.lines.map(&:chomp)
+  branches.each do |branch|
+    display_branch = branch
+    if branch == current_branch
+      display_branch = [branch, Term::ANSIColor.bold('(current)')].join(' ')
+    end
+    menu.choice(display_branch)
   end
+end
+
+answer_without_ansi = answer.gsub(/\e\[\d+m/, '')
+answer_without_current_marker = answer_without_ansi.gsub(/\s*\(current\)\s*/, '').strip
+if answer_without_current_marker.nil? || answer_without_current_marker.empty?
+  puts "Not switching branches"
 else
-  raise "Failed with error: \n#{results}"
+  puts "Checking out #{answer_without_current_marker}"
+  system "git checkout #{answer_without_current_marker}"
 end

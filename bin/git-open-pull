@@ -2,20 +2,63 @@
 
 require 'json'
 
-if %x{which gh}.empty?
-  puts <<~MESSAGE
-    The gh command is not found. Possible installation methods:
+VERSION = "1.0.0"
+SCRIPT_NAME = File.basename(__FILE__)
 
-        # via homebrew
+if ARGV.include?("-h") || ARGV.include?("--help")
+  puts <<~HELP
+    #{SCRIPT_NAME} - Open or create a pull request
+
+    Usage: #{SCRIPT_NAME} [options] [sha-or-ref]
+
+    Options:
+      -h, --help     Show this help message
+      -v, --version  Show version information
+
+    Arguments:
+      sha-or-ref     SHA, branch, or PR number (optional)
+
+    Description:
+      Opens an existing pull request or creates a new one:
+      - With no arguments: opens existing PR for current branch, or creates new one
+      - With PR number: opens that PR
+      - With SHA/ref: opens PR containing that commit
+
+    Examples:
+      # Open/create PR for current branch
+      #{SCRIPT_NAME}
+
+      # Open PR #123
+      #{SCRIPT_NAME} 123
+
+      # Open PR containing a specific commit
+      #{SCRIPT_NAME} abc1234
+
+    Version: #{VERSION}
+  HELP
+  exit 0
+end
+
+if ARGV.include?("-v") || ARGV.include?("--version")
+  puts "#{SCRIPT_NAME} version #{VERSION}"
+  exit 0
+end
+
+if %x{which gh}.chomp.empty?
+  STDERR.puts <<~MESSAGE
+    Error: The gh command is not found. Install with:
+
         brew install gh
 
-    More more installation options see https://cli.github.com/
+    For more options see https://cli.github.com/
   MESSAGE
   exit 1
 end
 
-ARGV_PROVIDED_SHA_OR_REF = ARGV.shift
-SHA_OR_REF = ARGV_PROVIDED_SHA_OR_REF || %x{git sha}.chomp
+# Filter out any remaining flags
+args = ARGV.reject { |a| a.start_with?("-") }
+ARGV_PROVIDED_SHA_OR_REF = args.shift
+SHA_OR_REF = ARGV_PROVIDED_SHA_OR_REF || %x{git rev-parse HEAD}.chomp
 
 if SHA_OR_REF =~ /^\d+$/
   # when SHA_OR_REF is a PR number itself

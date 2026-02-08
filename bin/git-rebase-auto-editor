@@ -1,5 +1,43 @@
 #!/usr/bin/env bash
 
-rebase_todo_file=$1
-echo "Auto-rebasing $rebase_todo_file"
+VERSION="1.0.0"
+SCRIPT_NAME="git-rebase-auto-editor"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Automatic rebase editor (no-op)
+
+Usage: $SCRIPT_NAME [options] <rebase-todo-file>
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Description:
+  A no-op editor for git rebase that automatically accepts the default
+  rebase todo. Used as GIT_SEQUENCE_EDITOR for automated rebases.
+
+Examples:
+  # Use with GIT_SEQUENCE_EDITOR
+  GIT_SEQUENCE_EDITOR=$SCRIPT_NAME git rebase -i HEAD~3
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+rebase_todo_file="$1"
+if [ -n "$rebase_todo_file" ]; then
+  echo "Auto-rebasing $rebase_todo_file"
+fi
 exit 0

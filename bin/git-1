@@ -2,11 +2,14 @@
 
 require 'optparse'
 
+VERSION = "1.0.0"
+SCRIPT_NAME = File.basename(__FILE__)
+
 options = {
   author: false
 }
 OptionParser.new do |opts|
-  opts.banner = "Usage: git-1 [options] [paths]"
+  opts.banner = "Usage: #{SCRIPT_NAME} [options] [ref]"
 
   opts.on("--author", "Include author in the output") do
     options[:author] = true
@@ -14,6 +17,39 @@ OptionParser.new do |opts|
 
   opts.on("-a", "Alias for --author") do
     options[:author] = true
+  end
+
+  opts.on("-v", "--version", "Show version information") do
+    puts "#{SCRIPT_NAME} version #{VERSION}"
+    exit 0
+  end
+
+  opts.on("-h", "--help", "Show this help message") do
+    puts <<~HELP
+      #{SCRIPT_NAME} - Show commits in oneline format
+
+      #{opts}
+
+      Description:
+        Shows commits between main branch and HEAD (or specified ref) in
+        a concise oneline format. Useful for reviewing branch commits.
+
+      Examples:
+        # Show commits on this branch vs main
+        #{SCRIPT_NAME}
+
+        # Show commits with author
+        #{SCRIPT_NAME} --author
+
+        # Show last N commits
+        #{SCRIPT_NAME} HEAD~5
+
+        # Show commits in a range
+        #{SCRIPT_NAME} abc123..def456
+
+      Version: #{VERSION}
+    HELP
+    exit 0
   end
 end.parse!(into: options)
 

@@ -1,3 +1,48 @@
 #!/usr/bin/env bash
 
-f() { git log --oneline -- $1 | tail -n 1; }; f
+VERSION="1.0.0"
+SCRIPT_NAME="git-whatadded"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Find the commit that added a file
+
+Usage: $SCRIPT_NAME [options] <file>
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Arguments:
+  file           Path to the file (required)
+
+Description:
+  Finds and displays the commit that originally added a file to the
+  repository.
+
+Examples:
+  # Find when a file was added
+  $SCRIPT_NAME path/to/file.rb
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+if [ -z "$1" ]; then
+  echo "Error: You must provide a file path." >&2
+  echo "Usage: $SCRIPT_NAME <file>" >&2
+  exit 1
+fi
+
+git log --oneline -- "$1" | tail -n 1

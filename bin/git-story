@@ -1,3 +1,53 @@
 #!/usr/bin/env bash
 
-git log --author=\"Zach Dennis\" -n10 | grep contribute | head -n1 | sed -e \"s/[^0-9]//g\" | xargs -I{} echo -n '[contributes #{}]' | pbcopy
+VERSION="1.0.0"
+SCRIPT_NAME="git-story"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Copy story reference to clipboard
+
+Usage: $SCRIPT_NAME [options]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Description:
+  Extracts a story/contribution reference from recent commits and copies
+  it to the clipboard in '[contributes #NNN]' format. Note: This is
+  configured for a specific workflow and may need customization.
+
+Examples:
+  # Copy story reference to clipboard
+  $SCRIPT_NAME
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+author=$(git config user.name 2>/dev/null)
+if [ -z "$author" ]; then
+  echo "Error: Could not determine git user.name" >&2
+  exit 1
+fi
+
+story_num=$(git log --author="$author" -n10 2>/dev/null | grep contribute | head -n1 | sed -e "s/[^0-9]//g")
+if [ -z "$story_num" ]; then
+  echo "Error: Could not find a story reference in recent commits" >&2
+  exit 1
+fi
+
+printf '[contributes #%s]' "$story_num" | pbcopy
+echo "Copied: [contributes #$story_num]"

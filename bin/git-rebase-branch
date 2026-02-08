@@ -29,8 +29,16 @@ def main_branch
   @main_branch ||= `git get-main-branch`.chomp
 end
 
+options = {
+  base: main_branch,
+  interactive: false
+}
 OptionParser.new do |opts|
-  opts.banner = "Usage: #{SCRIPT_NAME} [options] [ref]"
+  opts.banner = "Usage: #{SCRIPT_NAME} [options] [base-branch]"
+
+  opts.on("-i", "--interactive", "Rebase interactively") do
+    options[:interactive] = true
+  end
 
   opts.on("-v", "--version", "Show version information") do
     puts "#{SCRIPT_NAME} version #{VERSION}"
@@ -38,26 +46,22 @@ OptionParser.new do |opts|
   end
 
   opts.on("-h", "--help", "Prints help message") do
-    main_branch_name = `git get-main-branch`.chomp
-
+    main_branch_name = main_branch
     puts <<~HELP
-      #{SCRIPT_NAME} - Display changed filenames for a range of commits
+      #{SCRIPT_NAME} - Rebase branch from divergence point
 
       #{opts}
 
       Description:
-        Shows filenames that changed between commits with their status
-        (Added, Modified, Deleted).
+        Rebases the current branch starting at the first commit where it
+        diverges from the base branch. Default base is #{main_branch_name}.
 
       Examples:
-        #{bold("# List files changed between this branch and #{main_branch_name}")}
-        #{SCRIPT_NAME}
+        #{bold("# Rebase interactively from #{main_branch_name}")}
+        #{SCRIPT_NAME} -i
 
-        #{bold("# List files in the last two commits")}
-        #{SCRIPT_NAME} HEAD~2
-
-        #{bold("# List files in a custom commit range")}
-        #{SCRIPT_NAME} abc..xyz
+        #{bold("# Rebase from a different base branch")}
+        #{SCRIPT_NAME} -i develop
 
       Version: #{VERSION}
     HELP
@@ -65,13 +69,13 @@ OptionParser.new do |opts|
   end
 end.parse!
 
+options[:base] = ARGV.first if ARGV.first
 
-range = if ARGV.empty?
-  "#{main_branch}..HEAD"
+first_commit_that_diverges = `git log #{options[:base]}..HEAD --format="%h" | tail -n1`.strip
+
+if first_commit_that_diverges
+  command ="git rebase -i #{first_commit_that_diverges}~1"
+  system(command)
 else
-  argv = ARGV.join(" ")
-  argv.match("..") ? argv : "HEAD..#{ARGV.first}"
+  puts "The current branch doesn't appear to diverge from #{options[:base]}"
 end
-
-command ="git diff --name-status #{range}"
-system(command)

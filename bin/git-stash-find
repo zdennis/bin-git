@@ -3,21 +3,25 @@
 require "optparse"
 require 'shellwords'
 
+VERSION = "1.0.0"
+SCRIPT_NAME = File.basename(__FILE__)
+
 def require_or_install(name, version:, require_as: name)
   require require_as
 rescue LoadError
   begin
-    install_missing_gem name, version: version
+    puts "Missing gem #{name}. Installing #{name} #{version}..."
+    system "gem install #{name} -v #{version}"
     Gem.refresh
     require require_as
-  rescue
+  rescue => ex
+    puts ex
     puts "#{name} #{version} could not be installed. You will need to install it manually."
+    exit 1
   end
 end
 
 require_or_install 'term-ansicolor', version: '1.7.1', require_as: 'term/ansicolor'
-
-SCRIPT_NAME = File.basename(__FILE__)
 
 options = {
   after: nil,
@@ -28,19 +32,21 @@ options = {
   debug: false
 }
 OptionParser.new do |opts|
-  opts.on("--after=DATETIME") do |datetime|
+  opts.banner = "Usage: #{SCRIPT_NAME} [options]"
+
+  opts.on("--after=DATETIME", "Only show stashes after this date") do |datetime|
     options[:after] = datetime
   end
 
-  opts.on("--before=DATETIME") do |datetime|
+  opts.on("--before=DATETIME", "Only show stashes before this date") do |datetime|
     options[:before] = datetime
   end
 
-  opts.on("-f", "--filename-pattern=GLOB") do |glob|
+  opts.on("-f", "--filename-pattern=GLOB", "Pattern to match in stashed files") do |glob|
     options[:filename_patterns] << glob
   end
 
-  opts.on("--oneline") do
+  opts.on("--oneline", "Show oneline format") do
     options[:oneline] = true
   end
 
@@ -48,30 +54,41 @@ OptionParser.new do |opts|
     options[:quiet] = true
   end
 
-  opts.on("--debug") do
+  opts.on("--debug", "Show debug information") do
     options[:debug] = true
   end
 
-  opts.on("-h", "--help") do
+  opts.on("-v", "--version", "Show version information") do
+    puts "#{SCRIPT_NAME} version #{VERSION}"
+    exit 0
+  end
+
+  opts.on("-h", "--help", "Show help message") do
     puts <<~HELP
-      #{SCRIPT_NAME} finds stashes that contain changes.
+      #{SCRIPT_NAME} - Find stashes containing specific file changes
+
+      #{opts}
+
+      Description:
+        Searches through stashes to find ones that contain changes
+        to files matching the specified pattern.
 
       Examples:
+        #{Term::ANSIColor.bold("# Find stashes modifying files matching 'config'")}
+        #{SCRIPT_NAME} -f config
 
-        #{Term::ANSIColor.bold("# Find stashes that modify any file matching shoryuken")}
-        #{SCRIPT_NAME} -f shoryuken
+        #{Term::ANSIColor.bold("# Find stashes from the past week")}
+        #{SCRIPT_NAME} -f config --after "1 week ago"
 
-        #{Term::ANSIColor.bold("# Find stashes that modify any file matching shoryuken in the past week")}
-        #{SCRIPT_NAME} -f shoryuken --after "1 week ago"
+        #{Term::ANSIColor.bold("# Find stashes with oneline output")}
+        #{SCRIPT_NAME} -f config --oneline
 
-        #{Term::ANSIColor.bold("# Find stashes and view diff")}
-        #{SCRIPT_NAME} -f shoryuken --after "1 week ago" --oneline
+        #{Term::ANSIColor.bold("# Find stashes without showing diff")}
+        #{SCRIPT_NAME} -f config --oneline --quiet
 
-        #{Term::ANSIColor.bold("# Find stashes with oneline commit message but without diff")}
-        #{SCRIPT_NAME} -f shoryuken --after "1 week ago" --oneline --quiet
+      Version: #{VERSION}
     HELP
-    puts
-    puts opts
+    exit 0
   end
 end.parse!
 

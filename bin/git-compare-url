@@ -1,23 +1,77 @@
 #!/usr/bin/env ruby
 
+VERSION = "1.0.0"
+SCRIPT_NAME = File.basename(__FILE__)
+
+if ARGV.include?("-h") || ARGV.include?("--help")
+  puts <<~HELP
+    #{SCRIPT_NAME} - Generate GitHub compare URL
+
+    Usage: #{SCRIPT_NAME} [options] [base] [head]
+
+    Options:
+      -h, --help     Show this help message
+      -v, --version  Show version information
+
+    Arguments:
+      base           Base branch (default: main/master)
+      head           Head branch (default: current branch)
+
+    Description:
+      Generates a GitHub compare URL to view differences between two branches.
+
+    Examples:
+      # Compare current branch against main
+      #{SCRIPT_NAME}
+
+      # Compare against specific base
+      #{SCRIPT_NAME} develop
+
+      # Compare two specific branches
+      #{SCRIPT_NAME} main feature-branch
+
+    Version: #{VERSION}
+  HELP
+  exit 0
+end
+
+if ARGV.include?("-v") || ARGV.include?("--version")
+  puts "#{SCRIPT_NAME} version #{VERSION}"
+  exit 0
+end
+
 def get_base_branch(*possible_branches)
-  Array(possible_branches).find { |branch| `git branch`.lines.grep(branch).any? }
+  Array(possible_branches).find { |branch| `git branch`.lines.grep(/\b#{branch}\b/).any? }
 end
 
-if ARGV.length == 0
+# Filter out help/version flags from ARGV
+args = ARGV.reject { |a| a =~ /^-/ }
+
+comparison = case args.length
+when 0
   base = get_base_branch("main", "master")
-  comparison = "#{base}...#{`git current-branch`}"
-elsif ARGV.length == 1
-  base = ARGV.first
-  comparison = base =~ /\.\.\/?/ ? base : "#{base}...#{`git current-branch`}"
-elsif ARGV.length == 2
-  comparison = "#{ARGV[0]}...#{ARGV[1]}"
+  unless base
+    STDERR.puts "Error: Could not determine base branch"
+    exit 1
+  end
+  current = `git current-branch`.chomp
+  "#{base}...#{current}"
+when 1
+  base = args.first
+  if base =~ /\.\.\/?/
+    base
+  else
+    current = `git current-branch`.chomp
+    "#{base}...#{current}"
+  end
+else
+  "#{args[0]}...#{args[1]}"
 end
 
-url = [
-  `git url`.chomp,
-  "compare",
-  comparison
-].join("/")
+url = `git url`.chomp
+if url.empty?
+  STDERR.puts "Error: Could not determine repository URL"
+  exit 1
+end
 
-puts url
+puts [url, "compare", comparison].join("/")

@@ -1,24 +1,66 @@
 #!/usr/bin/env ruby
 
+VERSION = "1.0.0"
+SCRIPT_NAME = File.basename(__FILE__)
+
+if ARGV.include?("-h") || ARGV.include?("--help")
+  puts <<~HELP
+    #{SCRIPT_NAME} - Open your pull requests on GitHub
+
+    Usage: #{SCRIPT_NAME} [options]
+
+    Options:
+      -h, --help     Show this help message
+      -v, --version  Show version information
+
+    Description:
+      Opens the GitHub page showing your pull requests in the current
+      repository. Requires 'github.user' to be set in git config.
+
+    Setup:
+      git config --global github.user <your-github-username>
+
+    Examples:
+      #{SCRIPT_NAME}
+
+    Version: #{VERSION}
+  HELP
+  exit 0
+end
+
+if ARGV.include?("-v") || ARGV.include?("--version")
+  puts "#{SCRIPT_NAME} version #{VERSION}"
+  exit 0
+end
+
 def require_or_install(name, version:, require_as: name)
   require require_as
 rescue LoadError
   begin
-    install_missing_gem name, version: version
+    puts "Missing gem #{name}. Installing #{name} #{version}..."
+    system "gem install #{name} -v #{version}"
     Gem.refresh
     require require_as
-  rescue
+  rescue => ex
+    puts ex
     puts "#{name} #{version} could not be installed. You will need to install it manually."
+    exit 1
   end
 end
 
 require_or_install 'term-ansicolor', version: '1.7.1', require_as: 'term/ansicolor'
 
 BASE_URL = `git url`.chomp
-USER = `git config github.user`.chomp
-
-if USER.empty?
-  fail Term::ANSIColor.red
+if BASE_URL.empty?
+  STDERR.puts Term::ANSIColor.red("Error: Could not determine repository URL")
+  exit 1
 end
 
-%x{open '#{BASE_URL}/pulls/#{USER}'}
+USER = `git config github.user`.chomp
+if USER.empty?
+  STDERR.puts Term::ANSIColor.red("Error: github.user not configured")
+  STDERR.puts "Set with: git config --global github.user <username>"
+  exit 1
+end
+
+system("open '#{BASE_URL}/pulls/#{USER}'")

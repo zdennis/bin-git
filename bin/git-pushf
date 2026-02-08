@@ -1,3 +1,45 @@
 #!/usr/bin/env sh
 
-git push --force-with-lease
+VERSION="1.0.0"
+SCRIPT_NAME="git-pushf"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Force push with lease (safer force push)
+
+Usage: $SCRIPT_NAME [options] [git-push-options]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Description:
+  Performs a force push with lease, which is safer than --force.
+  It will fail if the remote branch has been updated since your last fetch,
+  preventing accidental overwrites of others' work.
+
+  This is equivalent to: git push --force-with-lease
+
+Examples:
+  # Force push current branch safely
+  $SCRIPT_NAME
+
+  # Force push to a specific remote
+  $SCRIPT_NAME origin
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+git push --force-with-lease "$@"

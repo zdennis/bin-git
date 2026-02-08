@@ -1,3 +1,49 @@
 #!/usr/bin/env bash
 
+VERSION="1.0.0"
+SCRIPT_NAME="git-edit-sha"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Edit a specific commit (alias for rebase-edit-sha)
+
+Usage: $SCRIPT_NAME [options] <sha> [sha...]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Arguments:
+  sha            One or more commit SHAs to edit
+                 Can also use range format: abc123..def456
+
+Description:
+  Alias for git-rebase-edit-sha. Starts an interactive rebase with the
+  specified commit(s) marked for editing.
+
+Examples:
+  # Edit a single commit
+  $SCRIPT_NAME abc1234
+
+  # Edit multiple commits
+  $SCRIPT_NAME abc1234 def5678
+
+  # Edit a range of commits
+  $SCRIPT_NAME abc1234..def5678
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
 git-rebase-edit-sha "$@"

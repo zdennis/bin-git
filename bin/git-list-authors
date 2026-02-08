@@ -2,6 +2,9 @@
 
 require "optparse"
 
+VERSION = "1.0.0"
+SCRIPT_NAME = File.basename(__FILE__)
+
 def require_or_install(name, version:, require_as: name)
   require require_as
 rescue LoadError => ex
@@ -23,28 +26,37 @@ options = {
   verbose: false,
 }
 OptionParser.new do |opts|
-  opts.banner = "Usage: git-list-authors [options]"
+  opts.banner = "Usage: #{SCRIPT_NAME} [options] <path> [path...]"
 
   opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
     options[:verbose] = v
   end
 
+  opts.on("--version", "Show version information") do
+    puts "#{SCRIPT_NAME} version #{VERSION}"
+    exit 0
+  end
+
   opts.on("-h", "--help", "Prints help") do
-    puts opts
     puts <<~MESSAGE
+      #{SCRIPT_NAME} - List unique authors for file(s)
 
-      Prints out the list of unique authors that have modified the given file/path(s).
+      #{opts}
 
-      It will only show each author once, even if they have multiple commits.
-      Authors are sorted by the time of their most recent commit.
+      Description:
+        Lists unique authors who have modified the given file/path(s).
+        Each author appears once, sorted by their most recent commit.
 
-      Example usage:
+      Examples:
+        # List authors for a file
+        #{SCRIPT_NAME} path/to/some/file
 
-        git list-authors path/to/some/file
+        # List authors for a directory
+        #{SCRIPT_NAME} app/models/
 
+      Version: #{VERSION}
     MESSAGE
-
-    exit
+    exit 0
   end
 end.parse!
 

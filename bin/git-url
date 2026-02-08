@@ -1,7 +1,54 @@
 #!/usr/bin/env bash
 
-git remote -v |
-  grep -E 'origin.*fetch' |
+VERSION="1.0.0"
+SCRIPT_NAME="git-url"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Get the HTTPS URL for the origin remote
+
+Usage: $SCRIPT_NAME [options]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Description:
+  Converts the git remote URL to an HTTPS URL suitable for browsers.
+  Supports various URL formats:
+    - git://some.repo/foo.git
+    - git@github.com:org/repo.git
+    - git@github.com:org/repo
+
+Examples:
+  # Get repository URL
+  $SCRIPT_NAME
+
+  # Open in browser
+  open \$($SCRIPT_NAME)
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+remote_url=$(git remote -v 2>/dev/null | grep -E 'origin.*fetch')
+if [ -z "$remote_url" ]; then
+  echo "Error: No origin remote found" >&2
+  exit 1
+fi
+
+echo "$remote_url" |
   sed -e 's/[[:space:]]/ /' |
   cut -d' ' -f2 |
   sed -E 's/git:\/\/(.*)\.git/https:\/\/\1/g' |      # support: git://some.repos/foo.git

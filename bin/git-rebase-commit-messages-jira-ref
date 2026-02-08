@@ -1,0 +1,115 @@
+#!/bin/bash
+
+VERSION="1.0.0"
+SCRIPT_NAME="git-rebase-commit-messages-jira-ref"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Add JIRA references to commits during rebase
+
+Usage: $SCRIPT_NAME [options]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Environment Variables:
+  JIRA_REF       JIRA ticket ID (e.g., APPS-12345) to use for all commits
+
+Description:
+  Script to ensure each commit has a REFERENCES section with a JIRA link.
+  Uses JIRA_REF env var if set, otherwise prompts the user.
+
+Usage with git rebase:
+  git rebase -i --exec '$SCRIPT_NAME' <base-commit>^
+
+With env var (recommended to avoid repeated prompts):
+  JIRA_REF=APPS-12345 git rebase -i --exec '$SCRIPT_NAME' <base-commit>^
+
+Example:
+  JIRA_REF=APPS-12345 git rebase -i --exec '$SCRIPT_NAME' 66ac768f0^
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+# Get the current commit message
+COMMIT_MSG=$(git log -1 --format=%B)
+COMMIT_SHORT=$(git log -1 --format=%h)
+COMMIT_SUBJECT=$(git log -1 --format=%s)
+
+# Check if REFERENCES section exists with a JIRA link
+if echo "$COMMIT_MSG" | grep -q "REFERENCES" && echo "$COMMIT_MSG" | grep -q "zendesk.atlassian.net/browse"; then
+  echo "Commit $COMMIT_SHORT has REFERENCES with JIRA link"
+  exit 0
+fi
+
+# Missing REFERENCES or JIRA link
+echo ""
+echo "=========================================="
+echo "Commit: $COMMIT_SHORT"
+echo "Subject: $COMMIT_SUBJECT"
+echo "=========================================="
+echo ""
+echo "This commit is missing a REFERENCES section with a JIRA link."
+echo ""
+
+# Check if REFERENCES section exists (but without JIRA link)
+HAS_REFERENCES=false
+if echo "$COMMIT_MSG" | grep -q "REFERENCES"; then
+  HAS_REFERENCES=true
+  echo "Current REFERENCES section found but missing JIRA link."
+else
+  echo "No REFERENCES section found."
+fi
+
+# Check for JIRA_REF env var first
+if [ -n "$JIRA_REF" ]; then
+  JIRA_TICKET="$JIRA_REF"
+  echo "Using JIRA_REF from environment: $JIRA_TICKET"
+else
+  echo "Enter JIRA ticket (e.g., APPS-12345) or press Enter to skip:"
+  echo "(Tip: Set JIRA_REF env var to avoid this prompt for each commit)"
+  read -r JIRA_TICKET
+
+  if [ -z "$JIRA_TICKET" ]; then
+    echo "Skipping - no JIRA ticket provided"
+    exit 0
+  fi
+fi
+
+# Normalize JIRA ticket - remove any URL prefix if user pasted full URL
+JIRA_TICKET=$(echo "$JIRA_TICKET" | sed 's|.*zendesk.atlassian.net/browse/||' | sed 's|.*/||')
+
+JIRA_URL="https://zendesk.atlassian.net/browse/$JIRA_TICKET"
+
+if [ "$HAS_REFERENCES" = true ]; then
+  # Add JIRA link to existing REFERENCES section
+  NEW_MSG=$(echo "$COMMIT_MSG" | sed "/^REFERENCES/a\\
+- $JIRA_URL")
+else
+  # Append new REFERENCES section
+  NEW_MSG="$COMMIT_MSG
+
+REFERENCES
+
+- $JIRA_URL"
+fi
+
+# Amend the commit with the new message
+echo "$NEW_MSG" | git commit --amend -F -
+
+echo ""
+echo "Updated commit message with JIRA reference: $JIRA_URL"
+exit 0

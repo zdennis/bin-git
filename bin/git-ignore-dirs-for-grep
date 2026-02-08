@@ -1,3 +1,43 @@
 #!/usr/bin/env bash
 
+VERSION="1.0.0"
+SCRIPT_NAME="git-ignore-dirs-for-grep"
+
+show_help() {
+  cat << EOF
+$SCRIPT_NAME - Generate grep exclude-dir flags from .gitignore
+
+Usage: $SCRIPT_NAME [options]
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+
+Description:
+  Reads .gitignore and outputs --exclude-dir flags for grep to ignore
+  the same directories. Output can be used with command substitution.
+
+Examples:
+  # Use with grep
+  grep -r "pattern" \$($SCRIPT_NAME) .
+
+Version: $VERSION
+EOF
+}
+
+case "$1" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+  -v|--version)
+    echo "$SCRIPT_NAME version $VERSION"
+    exit 0
+    ;;
+esac
+
+if [ ! -f .gitignore ]; then
+  exit 0
+fi
+
 cat .gitignore | sed -e 's/\/\*//g' | sort | uniq | sed -E 's/(.*)$/ --exclude-dir \1/g' | tr '\n' ' '
