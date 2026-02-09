@@ -2,17 +2,17 @@
 
 [![Tests](https://github.com/zdennis/bin-git/actions/workflows/test.yml/badge.svg)](https://github.com/zdennis/bin-git/actions/workflows/test.yml)
 
-A collection of 88 git helper scripts that extend git with useful commands for everyday workflows.
+A collection of git helper scripts that extend git with useful commands for everyday workflows.
 
 ## Why This Exists
 
-Git automatically discovers any executable prefixed with `git-` in your PATH. Running `git backup-branch` will find and execute `git-backup-branch`. This project leverages that feature to provide a collection of git extensions that are:
+I don't want to remember things I can look up. And I want the things that help me to be discoverable.
 
-- **Easy to discover** — Run `git <tab><tab>` to see available commands, or use `--help` on any tool
-- **Easy to evolve** — Each tool is a standalone script that can be modified, replaced, or extended independently
-- **Polyglot** — Tools can be written in any language (Bash, Ruby, Python, Go, etc.), not just shell
-- **Testable** — Unlike git aliases, these scripts can have proper test suites
-- **Maintainable** — Far more maintainable than a sprawling `.gitconfig` with inline aliases
+Git finds any executable named `git-*` in your PATH and lets you run it as a subcommand. For instance, `git-backup-branch` becomes `git backup-branch`. No aliases, no configuration.
+
+This repository is a collection of these scripts—things like `git open-pull` to open the current PR in a browser, or `git previous-branch` to get the branch you were just on. They started as quick fixes for daily annoyances and accumulated over time.
+
+In my experience, scripts beat aliases. You can write them in any language, give them proper `--help` output, version them, and test them. They're also easier to change and easier to delete.
 
 This is the git-specific sibling of [zdennis/bin](https://github.com/zdennis/bin).
 
@@ -36,7 +36,31 @@ spec/         # Tests for the tools
 
 **Note:** `bin/` contains the tools meant for external use. `script/` contains development helpers that should not be added to your `$PATH`.
 
-## Tools
+## Top Tools
+
+These are the ones I reach for most often.
+
+| Tool | Notes |
+|------|-------|
+| `git-backup-branch` | Used daily. Creates timestamped branch backups. I've incorporated this into AI-assisted workflows so agents can create restore points before making changes. |
+| `git-1m` | Used daily. Quick view of commits on the current branch vs main. Faster than typing `git log --oneline main..`. Companions: `git-1` (last commit) and `git-m1` (last commit on main). |
+| `git-amend` | Used daily. Amends staged changes to the last commit. Shorter than `git commit --amend -C HEAD`. |
+| `git-current-branch` / `git-previous-branch` / `git-get-main-branch` | Used in scripts when referencing branches. `git-get-main-branch` works with both `main` and `master` so you don't have to care how the repo is configured. |
+| `git-diff-branch` | Used daily. Shows range-diff between current branch and its remote. Useful for seeing if changes are meaningful or just SHA/message updates from a rebase. |
+| `git-recent` | Used daily. Lists recently checked-out branches. Quick way to switch back to something I was working on. |
+| `git-pushr` | Used daily. Pushes to the remote tracking branch, setting it up if needed. |
+| `git-pushf` | Used daily. Force push with `--force-with-lease`. |
+| `git-fixup` | Used daily. Creates fixup commits for later autosquashing. Lets me keep moving without interrupting flow to squash immediately. |
+| `git-rebase-sha` | Used daily. Interactive rebase from a given SHA. Headless—no need to manually edit the todo list. |
+| `git-edit-sha` | Used daily. Marks commits for editing in an interactive rebase. Works with single SHAs, multiple SHAs, or ranges. |
+| `git-reword-sha` | Used daily. Rewords commit messages via interactive rebase. Works with single SHAs, multiple SHAs, or ranges. |
+| `git-find-prs-for-file` | Used frequently. Finds pull requests that touched a given file. |
+| `git-open-url` | Used daily. Opens the repo on GitHub in my browser. |
+| `git-compare-url` | Used weekly. Generates GitHub compare URLs. |
+| `git-changed-files` | Used daily. Lists files changed on the current branch vs main. I alias this to `cf` and use it to feed file lists to other tools (rubocop, rspec, etc). |
+| `git-who-owns` | Used weekly. Shows which teams own a file based on CODEOWNERS. |
+
+## All Tools
 
 | Tool | Description |
 |------|-------------|
